@@ -1,72 +1,78 @@
-# RogNidhi (रोगनिधि) - Your Digital Health Treasury
+# RogNidhi (रोगनिधि) 🩺
+**Your Digital Health Treasury**
 
-[cite_start]**RogNidhi** is an AI-powered, lifelong medical information treasury designed to solve the critical problem of fragmented medical histories[cite: 33, 34]. [cite_start]By leveraging advanced extraction and organization tools, RogNidhi centralizes scattered health data—from handwritten prescriptions to digital lab reports—into a single, secure, and organized chronological timeline[cite: 35, 41, 59].
+RogNidhi is an AI-powered personal health record system designed to centralize fragmented medical histories. From handwritten prescriptions to digital lab reports, RogNidhi organizes your lifelong medical data into a secure, searchable, and chronological timeline.
 
 ---
 
-## 🏥 The Problem: Fragmented Care
-[cite_start]Currently, a patient’s medical history is often scattered across paper files, PDFs, and incompatible electronic systems[cite: 13]. This fragmentation leads to:
-* [cite_start]**Redundant Testing:** Lack of accessible history results in repeated diagnostic tests[cite: 17].
-* [cite_start]**Delayed Diagnoses:** Doctors waste precious time piecing together incomplete records instead of delivering care[cite: 16, 17].
-* [cite_start]**Patient Burden:** Individuals struggle to remember years of complex medical details and test results[cite: 14, 15].
+## 🚩 The Problem
+A patient's medical history is often scattered across paper files, PDFs, and incompatible electronic systems. This fragmentation leads to:
+* **Redundant Tests:** Frequent repeats of diagnostic procedures due to missing records.
+* **Delayed Diagnoses:** Doctors waste time piecing together incomplete histories.
+* **Patient Stress:** Individuals struggle to remember complex medical details over many years.
+* **Medical Errors:** Incomplete information can lead to clinical oversights.
 
-## ✨ Our Solution: RogNidhi
-[cite_start]RogNidhi acts as a secure "treasury" for all health-related documents, providing an intelligent interface for both patients and healthcare providers[cite: 34, 123].
+## 💡 Our Solution
+RogNidhi acts as a lifelong treasury for medical information, providing a seamless interface for patients, doctors, and diagnostic labs.
 
 ### Key Features
-#### For Patients
-* [cite_start]**Unified Storage:** One secure location for blood tests, prescriptions, vaccination records, and insurance documents[cite: 48, 50, 53, 55, 56].
-* [cite_start]**Automatic Organization:** AI extracts test names, values, and dates to build a chronological health timeline and easy-to-read trend graphs[cite: 58, 59].
-* [cite_start]**Instant Sharing:** Share a complete, organized summary with doctors with a single click[cite: 60, 61].
-* [cite_start]**Lifelong Accessibility:** Access your history anywhere, whether you change cities or switch doctors[cite: 62, 63].
 
-#### For Doctors & Healthcare Providers
-* [cite_start]**AI Clinical Summaries:** Receive automated summaries of a patient’s history to save time during consultations[cite: 38, 66, 68].
-* [cite_start]**Precision Data:** Search for specific details within a patient’s extensive medical record[cite: 39].
-* [cite_start]**Direct Integration:** Labs and hospitals can push reports directly to a patient’s profile via API[cite: 69, 70, 131].
+#### 👤 For Patients
+* **One Place for Everything:** Store blood tests, pathology reports, prescriptions, vaccination records, and insurance documents.
+* **Automatic Organization:** AI reads uploaded reports to extract key values and dates, building a visual health timeline.
+* **Trend Analysis:** View easy-to-read graphs of your health metrics over time.
+* **Lifelong Access:** Your data stays with you, even if you change cities or doctors.
+
+#### 👨‍⚕️ For Doctors
+* **AI Clinical Summaries:** Get an instant, organized summary of a patient's entire history.
+* **Granular Search:** Quickly find specific details from past consultations or lab results.
+* **Consent-Based Access:** View records only when the patient grants temporary access.
+
+#### 🔬 For Hospitals & Labs
+* **Direct Sync:** Labs can push reports directly to a patient’s profile via API.
+* **Instant Notifications:** Patients are notified the moment their results are ready and their timeline is updated.
 
 ---
 
 ## 🛠 Tech Stack
 
-### **1. [cite_start]Presentation Layer** [cite: 80, 85]
-* **Mobile:** Flutter + Dart (iOS, Android, Offline Support, Document Scanning)[cite: 81, 88].
-* [cite_start]**Web:** React.js + TypeScript (Doctor/Admin Portal, Patient Dashboard)[cite: 82, 86, 87].
+### **Presentation Layer**
+* **Mobile:** Flutter + Dart (Cross-platform iOS/Android, Document Scanning, Offline Support)
+* **Web:** React.js + TypeScript (Doctor/Admin Portal, Patient Dashboard)
 
-### **2. [cite_start]Backend & API Layer** [cite: 89, 91]
-* **Framework:** Django[cite: 89, 91].
-* [cite_start]**Modules:** Auth, User, Document, AI Pipeline, Notification, and Audit Modules[cite: 90, 92, 94, 96, 98].
+### **Backend API Layer**
+* **Framework:** Django
+* **Modules:** Auth, User Management, Document Processing, AI Pipeline, Audit Logs
 
-### **3. [cite_start]Data & Storage** [cite: 99, 101]
-* **Primary Database:** MySQL (Users, Profiles, Permissions, Sharing Records)[cite: 99, 103, 107].
+### **Data Layer**
+* **Database:** MySQL (Primary storage for profiles, permissions, and sharing records)
 
-### **4. [cite_start]AI & ML Layer** [cite: 108, 112]
-* **Summarization:** LangChain[cite: 109, 113].
-* [cite_start]**Models:** PyTorch and Transformers[cite: 110, 114].
-* [cite_start]**OCR:** Tesseract / EasyOCR (for extracting data from images/PDFs)[cite: 111, 116].
+### **AI & ML Layer**
+* **Summarization:** LangChain
+* **ML Frameworks:** PyTorch and Transformers
+* **OCR:** Tesseract / EasyOCR (For data extraction from images and PDFs)
 
 ---
 
-## ⚙️ Workflow
-1. [cite_start]**Input:** Users upload PDFs/Photos or labs sync reports via API[cite: 122, 130, 131].
-2. [cite_start]**AI Processing:** System performs OCR and Named Entity Recognition to identify medical terms and build trends[cite: 134, 136, 137, 139].
-3. [cite_start]**Storage:** Data is kept in an end-to-end encrypted, lifelong treasury[cite: 140, 142, 143].
-4. [cite_start]**Access:** Patients view their trends, and doctors receive instant clinical summaries upon granted access[cite: 141, 144, 145].
+## ⚙️ How It Works (Workflow)
+1.  **Input:** Patient uploads photos/PDFs or labs sync via API.
+2.  **AI Processing:** System uses OCR and Named Entity Recognition to identify medical terms and extract data.
+3.  **Secure Treasury:** Information is stored in an end-to-end encrypted environment.
+4.  **Output:** Patients view trends; Doctors receive AI-generated clinical summaries upon request.
 
 ---
 
 ## 🚀 Future Scope
-* **Active Clinical Network:** Moving from passive storage to a network connecting patients and facilities[cite: 151, 152].
-* [cite_start]**Health Assistant:** Proactive AI-based health guidance leveraging accumulated data[cite: 153].
-* [cite_start]**Comprehensive Care:** Integration of appointment management and a platform touching every aspect of healthcare delivery[cite: 153, 154].
+* **Active Clinical Network:** Connecting patients and doctors in a real-time health ecosystem.
+* **AI Health Assistant:** Leveraging historical data to provide proactive, intelligent health guidance.
+* **Appointment Management:** Integrated scheduling for consultations and follow-ups.
 
 ---
 
-## [cite_start]👥 The Team: TLE [cite: 4]
-[cite_start]**Institution:** NIT Jalandhar [cite: 9]
-* **Yash Patel** (2nd Year) [cite: 5]
-* [cite_start]**Aditya Soni** (2nd Year) [cite: 6]
-* [cite_start]**Ashima Sood** (2nd Year) [cite: 7]
-* **Udayveer Singh** (2nd Year) [cite: 8]
+## 👥 Team TLE (NIT Jalandhar)
+* **Yash Patel** - 2nd Year
+* **Aditya Soni** - 2nd Year
+* **Ashima Sood** - 2nd Year
+* **Udayveer Singh** - 2nd Year
 
-*Developed for **HackMol 7.0***[cite: 1, 3].
+*Created for **HackMol 7.0***
