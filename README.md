@@ -66,6 +66,7 @@ RogNidhi acts as a lifelong treasury for medical information, providing a seamle
 ## 🚀 Future Scope
 * **Active Clinical Network:** Connecting patients and doctors in a real-time health ecosystem.
 * **AI Health Assistant:** Leveraging historical data to provide proactive, intelligent health guidance.
+* **LangChain Integration:** Leveraging LangChain for improved chat memory and retrieval for specialized responses
 * **Appointment Management:** Integrated scheduling for consultations and follow-ups.
 
 ---
