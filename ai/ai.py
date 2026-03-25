@@ -1,7 +1,7 @@
 import logging
 from .ocr import extract_text
-from .structure import extract_limited
-from .summary import detect_abnormal, generate_summary, ask_question
+from .structured import extract_limited
+from .chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_question
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def run_ai_pipeline(file_obj, filename: str) -> dict:
 
         logger.info("Detecting abnormalities & generating summary...")
         enriched_data = detect_abnormal(test_data)
-        summary = generate_summary(enriched_data)
+        summary = generate_patient_summary(enriched_data)
 
         timeline_date = None
         for test in enriched_data:
@@ -49,7 +49,20 @@ def chat_with_rognidhi(medical_data: list, chat_history: list, new_question: str
         return "I don't have enough information to answer that."
         
     try:
+        logger.info("Returning RogNidhi response...")
         return ask_question(medical_data, new_question, chat_history)
     except Exception as e:
         logger.error(f"Chat Error: {e}")
         return "I'm having trouble analyzing your report right now. Please try again."
+    
+
+def get_doctor_clinical_brief(medical_data: list) -> str:
+    if not medical_data:
+        return "No structured data available for this report."
+        
+    try:
+        logger.info("Generating Doctor Summary...")
+        return generate_doctor_summary(medical_data)
+    except Exception as e:
+        logger.error(f"Doctor Summary Error: {e}")
+        return "I'm having trouble generating clinical brief report right now. Please try again."

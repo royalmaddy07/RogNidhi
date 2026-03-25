@@ -61,23 +61,21 @@ def detect_abnormal(data: list):
     return data
 
 
-def generate_summary(data: list):
+def generate_patient_summary(data: list):
     abnormal = [d for d in data if d.get("status") in ["HIGH", "LOW"]]
     prompt = f"""
-You are a clinical assistant.
-Talk like a doctor, human, not an AI. Use simple language but be precise
-Be ready for follow-up questions
+You are a helpful, empathetic clinical assistant talking directly to a patient.
+Use very simple, easy-to-understand everyday language. Do not use complex medical jargon.
+Be reassuring and ready for follow-up questions.
 
 Analyze the following lab report data:
 {abnormal if abnormal else data}
 
 Instructions:
-- Clearly list abnormal parameters (HIGH/LOW)
-- Mention possible clinical significance
-- Avoid giving definitive diagnoses
-- Keep it concise and structured
-- Don't say out instructions in the answer
-- Handle properly if no structured data is available, don't hallucinate
+- Gently list any parameters that are out of the normal range.
+- Explain what these results generally mean in simple terms.
+- Remind them that this is just a summary and they should consult their doctor for a real diagnosis.
+- Keep it concise and structured.
 - Don't use " ** " for bold text in your answer.
 
 Output format:
@@ -93,7 +91,41 @@ Output format:
         return response.choices[0].message.content.strip()
         
     except Exception as e:
-        logger.error(f"Groq Chat Error: {e}")
+        logger.error(f"Groq Chat Error (Patient Summary): {e}")
+        return "I'm having trouble connecting to my summarization engine. Please try again."
+    
+    
+def generate_doctor_summary(data: list):
+    abnormal = [d for d in data if d.get("status") in ["HIGH", "LOW"]]
+    prompt = f"""
+You are an advanced clinical AI assistant generating a quick brief for an attending physician.
+Use precise medical terminology and maintain a highly professional, clinical tone.
+
+Analyze the following lab report data:
+{abnormal if abnormal else data}
+
+Instructions:
+- Immediately highlight the abnormal parameters (HIGH/LOW) with their exact values and variances.
+- State potential clinical significance or common differentials based purely on the data.
+- Be extremely concise; doctors have limited time. Bullet points are preferred.
+- Do not provide patient-facing reassurance.
+- Handle properly if no structured data is available.
+- Don't use " ** " for bold text in your answer.
+
+Output format:
+- ...
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        logger.error(f"Groq Chat Error (Doctor Summary): {e}")
         return "I'm having trouble connecting to my summarization engine. Please try again."
 
 
