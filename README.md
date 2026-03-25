@@ -48,15 +48,16 @@ RogNidhi acts as a lifelong treasury for medical information, providing a seamle
 * **Database:** MySQL (Primary storage for profiles, permissions, and sharing records)
 
 ### **AI & ML Layer**
-* **Summarization:** LangChain
-* **ML Frameworks:** PyTorch and Transformers
-* **OCR:** Tesseract / EasyOCR (For data extraction from images and PDFs)
+* **OCR Engine**: NVIDIA NeMo Retriever-OCR for high-accuracy text extraction from medical images and PDFs.
+* **LLM Pipeline**: A triple-tier system cycling through Gemini 2.5 Flash, Gemini 3 Flash (Preview), and Groq (Llama 3.3).
+* **Document Processing**: PyMuPDF for rapid PDF-to-image vectorization.
+* **Clinical Intelligence**: Custom algorithms for abnormality detection and human-tone clinical summarization.
 
 ---
 
 ## ⚙️ How It Works (Workflow)
 1.  **Input:** Patient uploads photos/PDFs or labs sync via API.
-2.  **AI Processing:** System uses OCR and Named Entity Recognition to identify medical terms and extract data.
+2.  **AI Processing:** System converts documents suitable for NVIDIA OCR, followed by a triple-tier LLM Pipeline that extracts structured clinical data, identifies abnormalities, and generates summaries.
 3.  **Secure Treasury:** Information is stored in an end-to-end encrypted environment.
 4.  **Output:** Patients view trends; Doctors receive AI-generated clinical summaries upon request.
 
