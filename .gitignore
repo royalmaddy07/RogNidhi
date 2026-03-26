@@ -1,10 +1,11 @@
-backend/venv
-backend/.env
+**/venv/
 
-frontend/node_modules/
+**/__pycache__/
 
-ai/.env
-ai/venv/
-ai/__pycache__/
-ai/image.png
-ai/image1.png
+**/.env
+
+**/node_modules/
+
+*.png
+*.jpg
+.vscode/
