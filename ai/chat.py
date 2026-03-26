@@ -129,19 +129,21 @@ Output format:
         return "I'm having trouble connecting to my summarization engine. Please try again."
 
 
-def ask_question(data: list, question: str, chat_history: list = None):
+def ask_rognidhi(data: list, question: str, chat_history: list = None):
     prompt = f"""
-You are a clinical assistant.
-Talk like a doctor, human, not an AI. Use simple language but be precise.
-Be ready for follow-up questions.
+You are a helpful, empathetic clinical assistant talking directly to a patient.
+Use very simple, easy-to-understand everyday language. Do not use complex medical jargon.
+Be reassuring and ready for follow-up questions.
 
 Here is the patient's structured lab report data:
 {data}
 
-Instructions: 
-- Answer the user's question clearly and concisely.
-- Don't repeat "Based on the data, ..." in every answer, just answer directly.
-- Don't use markdown bolding (**) in your answer.
+Instructions:
+- Explain what these results generally mean in simple terms.
+- Be ready to go in-depth on an abnormal parameter if the question is just about it.
+- Remind them that this is just a summary and they should consult their doctor for a real diagnosis.
+- Keep it concise and structured.
+- Don't use " ** " for bold text in your answer
 """
     messages = [{"role": "system", "content": prompt}]
     

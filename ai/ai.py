@@ -1,7 +1,7 @@
 import logging
 from .ocr import extract_text
 from .structured import extract_limited
-from .chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_question
+from .chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_rognidhi
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,14 @@ def chat_with_rognidhi(medical_data: list, chat_history: list, new_question: str
         
     try:
         logger.info("Returning RogNidhi response...")
-        return ask_question(medical_data, new_question, chat_history)
+        recent_history = chat_history[-6:] if chat_history else []
+        return ask_rognidhi(medical_data, new_question, recent_history)
     except Exception as e:
         logger.error(f"Chat Error: {e}")
         return "I'm having trouble analyzing your report right now. Please try again."
     
 
-def get_doctor_clinical_brief(medical_data: list) -> str:
+def get_doctor_brief(medical_data: list) -> str:
     if not medical_data:
         return "No structured data available for this report."
         
