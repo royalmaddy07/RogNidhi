@@ -1,7 +1,7 @@
 import logging
-from ocr import extract_text
-from structured import extract_limited
-from chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_rognidhi
+from .ocr import extract_text
+from .structured import extract_limited
+from .chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_rognidhi
 
 logger = logging.getLogger(__name__)
 
