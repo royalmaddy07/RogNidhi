@@ -14,12 +14,14 @@ logger = logging.getLogger(__name__)
 def standardize_to_jpg(file_obj, filename: str):
     try:
         if filename.lower().endswith('.pdf'):
+            logger.info("Converting PDF page to image format...")
             file_bytes = file_obj.read() if hasattr(file_obj, 'read') else file_obj
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             page = doc.load_page(0)
             pix = page.get_pixmap(dpi=200)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         else:
+            logger.info("Processing standard image format...")
             img = Image.open(file_obj)
             if img.mode != 'RGB': img = img.convert('RGB')
 
@@ -33,8 +35,12 @@ def standardize_to_jpg(file_obj, filename: str):
         return None
 
 def extract_text(file_obj, filename="document.jpg"):
+    logger.info(f"Starting OCR extraction for: {filename}")
+    
     img_b64 = standardize_to_jpg(file_obj, filename)
-    if not img_b64: return None
+    if not img_b64: 
+        logger.error("Failed to process image/pdf into base64.")
+        return None
     
     image_data_url = f"data:image/jpeg;base64,{img_b64}"
     url = "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-ocr"
@@ -49,6 +55,7 @@ def extract_text(file_obj, filename="document.jpg"):
     }
 
     try:
+        logger.info("Sending payload to NVIDIA NeMo OCR API...")
         response = requests.post(url, headers=headers, json=payload, timeout=60)
         
         if response.status_code != 200:
@@ -62,7 +69,10 @@ def extract_text(file_obj, filename="document.jpg"):
                 text = item.get("text_prediction", {}).get("text", "")
                 if text.strip():
                     lines.append(text.strip())
-        return "\n".join(lines)
+        
+        extracted_text = "\n".join(lines)
+        logger.info(f"OCR success. Extracted {len(lines)} blocks of text.")
+        return extracted_text
 
     except Exception as e:
         logger.error(f"OCR Connection Error: {e}")

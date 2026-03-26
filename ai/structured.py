@@ -40,6 +40,7 @@ TEXT TO PROCESS:
 """
 
 def extract_with_gemini(text: str, model_name: str):
+    logger.info(f"Attempting JSON extraction using {model_name}...")
     prompt = build_prompt(text)
     try:
         response = gemini_client.models.generate_content(
@@ -52,7 +53,10 @@ def extract_with_gemini(text: str, model_name: str):
         if "```json" in output:
             output = output.split("```json")[1].split("```")[0].strip()
             
-        return json.loads(output) if output else None
+        result = json.loads(output) if output else None
+        if result:
+            logger.info(f"Success. {model_name} extracted the structured data.")
+        return result
 
     except Exception as e:
         error_msg = str(e)
@@ -63,7 +67,7 @@ def extract_with_gemini(text: str, model_name: str):
         return None
 
 def extract_with_groq(text: str):
-    logger.info("Fallback to Groq...")
+    logger.info("Attempting fallback using Groq (llama-3.3-70b-versatile)...")
     prompt = build_prompt(text)
     
     try:
@@ -78,6 +82,7 @@ def extract_with_groq(text: str):
         )
         
         output = response.choices[0].message.content
+        logger.info("Success. Groq fallback extracted the structured data.")
         return json.loads(output)
 
     except Exception as e:
@@ -85,18 +90,18 @@ def extract_with_groq(text: str):
         return {"document_title": "Unknown Document", "document_type": "OTHER", "tests": []}
 
 def extract_structured(text: str):
-    logger.info("Gemini 2.5 Flash...")
     data = extract_with_gemini(text, "gemini-2.5-flash")
     if data: return data
 
-    logger.info("Gemini 3 Flash (Preview)...")
     data = extract_with_gemini(text, "gemini-3-flash-preview")
     if data: return data
 
     return extract_with_groq(text)
 
 def extract_limited(text: str):
+    logger.info(f"Received OCR text of length: {len(text)} characters.")
     try:
         return extract_structured(text)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Initial extraction failed. Truncating text to 5000 characters and retrying. Error: {e}")
         return extract_structured(text[:5000])
