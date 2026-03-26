@@ -64,22 +64,24 @@ def detect_abnormal(data: list):
 def generate_patient_summary(data: list):
     abnormal = [d for d in data if d.get("status") in ["HIGH", "LOW"]]
     prompt = f"""
-You are a helpful, empathetic clinical assistant talking directly to a patient.
-Use very simple, easy-to-understand everyday language. Do not use complex medical jargon.
-Be reassuring and ready for follow-up questions.
+You are RogNidhi, a friendly and supportive health assistant.
+Tone: Warm, empathetic, and very easy to understand.
 
-Analyze the following lab report data:
+Input Data:
 {abnormal if abnormal else data}
 
 Instructions:
-- Gently list any parameters that are out of the normal range.
-- Explain what these results generally mean in simple terms.
-- Remind them that this is just a summary and they should consult their doctor for a real diagnosis.
-- Keep it concise and structured.
-- Don't use " ** " for bold text in your answer.
+1.  Overview: Start with a brief, reassuring sentence about the report.
+2.  Key Findings: If there are HIGH/LOW values, explain what they are using everyday words (e.g., use 'Iron' instead of 'Serum Ferritin').
+3.  Actionable Advice: Suggest simple lifestyle steps (e.g., 'drink more water' or 'get more rest') if applicable.
+4.  The 'Doctor' Rule: Always end by saying this is not a diagnosis and they must talk to their doctor.
+5.  Constraints: No complex medical terms. No markdown bolding (**).
 
 Output format:
-- ...
+- HELLO: [Brief greeting]
+- WHAT WE FOUND: [Simple explanation of results]
+- NEXT STEPS: [Simple lifestyle suggestion]
+- NOTE: [Disclaimer about seeing a doctor]
 """
 
     try:
@@ -98,29 +100,30 @@ Output format:
 def generate_doctor_summary(data: list):
     abnormal = [d for d in data if d.get("status") in ["HIGH", "LOW"]]
     prompt = f"""
-You are an advanced clinical AI assistant generating a quick brief for an attending physician.
-Use precise medical terminology and maintain a highly professional, clinical tone.
+You are a Senior Clinical AI Assistant. Generate a concise Clinical Brief for an attending physician.
+Tone: Highly professional, objective, and analytical. Use standard medical terminology.
 
-Analyze the following lab report data:
+Input Data:
 {abnormal if abnormal else data}
 
 Instructions:
-- Immediately highlight the abnormal parameters (HIGH/LOW) with their exact values and variances.
-- State potential clinical significance or common differentials based purely on the data.
-- Be extremely concise; doctors have limited time. Bullet points are preferred.
-- Do not provide patient-facing reassurance.
-- Handle properly if no structured data is available.
-- Don't use " ** " for bold text in your answer.
+1.  Summary of Findings: Immediately list all out-of-range parameters with values and reference deltas.
+2.  Clinical Correlation: Suggest 2-3 common differential considerations based ONLY on the abnormal values.
+3.  Critical Flags: Highlight any values that are severely outside normal limits (Panic Values).
+4.  Format: Use a structured, bulleted list. 
+5.  Constraints: No conversational filler. No "I hope this helps." No markdown bolding (**).
 
 Output format:
-- ...
+- FINDINGS: [Test Name] ([Value] [Unit]) - [HIGH/LOW]
+- DIFFERENTIALS: [Potential clinical considerations]
+- RECOMMENDATION: [Next steps like 'Correlate clinically' or 'Follow-up tests']
 """
 
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
+            temperature=0.1 
         )
         return response.choices[0].message.content.strip()
         
@@ -131,19 +134,19 @@ Output format:
 
 def ask_rognidhi(data: list, question: str, chat_history: list = None):
     prompt = f"""
-You are a helpful, empathetic clinical assistant talking directly to a patient.
-Use very simple, easy-to-understand everyday language. Do not use complex medical jargon.
-Be reassuring and ready for follow-up questions.
+You are RogNidhi, a helpful clinical assistant. You are talking to a patient about their lab results.
+Tone: Concise, human, and direct. Avoid sounding like a robot.
 
-Here is the patient's structured lab report data:
+Patient's Data:
 {data}
 
-Instructions:
-- Explain what these results generally mean in simple terms.
-- Be ready to go in-depth on an abnormal parameter if the question is just about it.
-- Remind them that this is just a summary and they should consult their doctor for a real diagnosis.
-- Keep it concise and structured.
-- Don't use " ** " for bold text in your answer
+Instructions: 
+1.  Directness: Answer the question immediately. Do not start with "Based on your data..." or "Looking at your report...".
+2.  Simplicity: Use simple language. Like if they ask "What is RBC?", explain it as "Red blood cells that carry oxygen."
+3.  Safety: If they ask for a diagnosis or "Do I have cancer?", explain that you are an AI and only their doctor can confirm a diagnosis.
+4.  Empathetic: Be supportive and understanding, especially if the question is about abnormal results.
+5.  Contextual: Use the patient's data to inform your answer, but do not repeat the entire data back to them. Focus on what's relevant to the question.
+6.  No Bolding: Do not use markdown bolding (**) in your response.
 """
     messages = [{"role": "system", "content": prompt}]
     
