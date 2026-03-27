@@ -16,6 +16,7 @@ class Role(models.TextChoices):
 class DocumentType(models.TextChoices):
     BLOOD_TEST        = 'blood_test',        'Blood Test'
     PATHOLOGY         = 'pathology',         'Pathology'
+    LAB_REPORT        = 'lab_report',        'Lab Report'
     PRESCRIPTION      = 'prescription',      'Prescription'
     DISCHARGE_SUMMARY = 'discharge_summary', 'Discharge Summary'
     VACCINATION       = 'vaccination',       'Vaccination'

@@ -195,7 +195,7 @@ class DocumentService:
 
         # 2. Check if THIS PATIENT already has this exact file
         if Document.objects.filter(patient=patient_profile, file_hash=file_hash).exists():
-            raise ValidationError("This file is already in your treasury.")
+            raise ValidationError("This document is already present in your records.")
 
         # 3. Check if this file has been processed anywhere in the system before
         # We join with MedicalRecord to ensure we reuse a SUCCESSFUL previous run

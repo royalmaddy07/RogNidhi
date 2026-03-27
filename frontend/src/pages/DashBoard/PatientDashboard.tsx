@@ -109,7 +109,8 @@ const PatientDashboard: React.FC = () => {
         fetchRecords(); 
       } else {
         const errData = await response.json();
-        setUploadStatus({ type: 'error', msg: errData.file?.[0] || "Upload failed." });
+        const errMsg = errData.detail || errData.file?.[0] || errData.error || "Upload failed.";
+        setUploadStatus({ type: 'error', msg: errMsg });
       }
     } catch (error) {
       setUploadStatus({ type: 'error', msg: "Server connection failed." });
