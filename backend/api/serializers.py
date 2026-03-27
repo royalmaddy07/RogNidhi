@@ -129,3 +129,21 @@ class DoctorRegisterSerializer(serializers.Serializer):
                 "A doctor with this license number is already registered."
             )
         return value
+    
+# ----------------------------------------------------------------------------
+# LOGIN SERIALIZERS
+# ----------------------------------------------------------------------------
+
+class LoginRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+class UserResponseSerializer(serializers.Serializer):
+    """
+    Used only for documentation or structured output if needed.
+    """
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    details = serializers.DictField(required=False)

@@ -1,10 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.permissions import AllowAny
-
-from .serializers import PatientRegisterSerializer, DoctorRegisterSerializer
+ 
+from .serializers import PatientRegisterSerializer, DoctorRegisterSerializer, LoginRequestSerializer
 from .services import register_patient, register_doctor
+from rest_framework import status, permissions
+from .services import AuthService
 
 # ──────────────────────────────────────────────────────────────
 # PATIENT REGISTER VIEW
@@ -113,3 +114,35 @@ class DoctorRegisterView(APIView):
             {"message": "User created successfully"},
             status=status.HTTP_201_CREATED
         )
+    
+# --------------------------------------------------------------------------------
+# LOGIN VIEW 
+# --------------------------------------------------------------------------------
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import LoginRequestSerializer
+from .services import AuthService
+
+class LoginView(APIView):
+    # This endpoint must be public
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = LoginRequestSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+            
+            # Business Logic via Service
+            user = AuthService.authenticate_user(email, password)
+            tokens = AuthService.get_tokens_for_user(user)
+            user_data = AuthService.get_user_payload(user)
+            
+            return Response({
+                **tokens,
+                "user": user_data
+            }, status=status.HTTP_200_OK)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
