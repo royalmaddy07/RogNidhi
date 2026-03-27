@@ -161,3 +161,40 @@ class AuthService:
             }
             
         return payload
+    
+
+# --------------------------------------------------------------------------------
+# UPLOAD DOCUMENT SERVICE 
+# --------------------------------------------------------------------------------
+import os
+from django.conf import settings
+from .models import Document
+
+class DocumentService:
+    @staticmethod
+    def save_document(patient_profile, validated_data):
+        uploaded_file = validated_data.pop('file')
+        
+        # Create the Document record
+        # Django's FileField automatically handles saving to MEDIA_ROOT
+        doc = Document.objects.create(
+            patient=patient_profile,
+            uploaded_by=patient_profile.user,
+            title=validated_data['title'],
+            document_type=validated_data['document_type'],
+            document_date=validated_data.get('document_date'),
+            file_url=uploaded_file # This saves the file and stores the path
+        )
+        
+        return doc
+    
+    @staticmethod
+    def delete_document(document):
+        """
+        Deletes the document record and the physical file from storage.
+        """
+        if document.file_url:
+            if os.path.isfile(document.file_url.path):
+                os.remove(document.file_url.path)
+        
+        document.delete()

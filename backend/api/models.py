@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-
+from django.core.validators import FileExtensionValidator
 
 # ──────────────────────────────────────────────────────────────
 # CHOICES
@@ -159,7 +159,10 @@ class Document(models.Model):
         choices=DocumentType.choices,
         default=DocumentType.OTHER
     )
-    file_url      = models.URLField(max_length=500)
+    file_url = models.FileField(
+        upload_to='documents/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])]
+    )
     document_date = models.DateField(blank=True, null=True)
     created_at    = models.DateTimeField(auto_now_add=True)
 

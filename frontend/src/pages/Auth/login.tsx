@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
+// Ensure this matches your backend server address
 const API_BASE = "http://127.0.0.1:8000/api";
 
 const COLORS = {
@@ -31,7 +32,7 @@ interface LoginResponse {
     role:    "patient" | "doctor";
     profile: Record<string, any>;
   };
-  error?: string; // Optional error message from backend
+  error?: string; 
 }
 
 // ─── STYLES ───────────────────────────────────────────────────
@@ -216,6 +217,7 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
+      // Endpoint matches the Python services/views logic
       const response = await fetch(`${API_BASE}/auth/login/`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,18 +230,20 @@ const Login: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Persist session
+        // 1. Persist Session in LocalStorage
         localStorage.setItem("access",  data.access);
         localStorage.setItem("refresh", data.refresh);
         localStorage.setItem("user",    JSON.stringify(data.user));
 
-        // Navigate based on verified server role
+        // 2. Dashboard Logic: Redirect based on the role stored in the DB
+        // We use the role from the API response (data.user.role) 
+        // rather than the UI toggle for security.
         if (data.user.role === "patient") {
           navigate("/Dashboard/PatientDashBoard");
         } else if (data.user.role === "doctor") {
           navigate("/Dashboard/DoctorDashBoard");
         } else {
-          setGlobalError("Invalid account role. Please contact support.");
+          setGlobalError("User role mismatch. Contact support.");
           triggerShake();
         }
 
@@ -249,16 +253,16 @@ const Login: React.FC = () => {
 
       } else if (response.status === 400) {
         if (data.email) setEmailError(data.email[0]);
-        else setGlobalError(data.error || "Please check your inputs.");
+        else setGlobalError(data.error || "Please check your credentials.");
         triggerShake();
 
       } else {
-        setGlobalError("Server error. Please try again later.");
+        setGlobalError("Server encountered an error.");
         triggerShake();
       }
 
     } catch (err) {
-      setGlobalError("Connection failed. Is the server running?");
+      setGlobalError("Network error. Please ensure the backend is running.");
       triggerShake();
     } finally {
       setLoading(false);
@@ -281,7 +285,7 @@ const Login: React.FC = () => {
 
         <div className={`login-card animate-slide-up ${shake ? "animate-shake" : ""}`}>
           
-          {/* Header */}
+          {/* Brand Header */}
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div style={{
               width: 54, height: 54, borderRadius: 16,
@@ -298,7 +302,7 @@ const Login: React.FC = () => {
             </p>
           </div>
 
-          {/* Role Switcher */}
+          {/* Role Switcher (Visual Hint) */}
           <div style={{
             display: "flex", background: COLORS.offWhite,
             padding: 6, borderRadius: 14, marginBottom: 32,
@@ -322,7 +326,7 @@ const Login: React.FC = () => {
           )}
 
           <form onSubmit={handleLogin} noValidate>
-            {/* Email */}
+            {/* Email Field */}
             <div style={{ marginBottom: 18 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.navy, display: "block", marginBottom: 8 }}>
                 Email Address
@@ -338,7 +342,7 @@ const Login: React.FC = () => {
               {emailError && <p className="field-error">{emailError}</p>}
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.navy }}>Password</label>
@@ -379,7 +383,7 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Back Link */}
+        {/* Home Navigation */}
         <div
           onClick={() => navigate("/")}
           style={{

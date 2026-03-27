@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import DoctorProfile
-
+from .models import DoctorProfile, Document
 
 # ──────────────────────────────────────────────────────────────
 # PATIENT REGISTER SERIALIZER
@@ -147,3 +146,36 @@ class UserResponseSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role = serializers.CharField()
     details = serializers.DictField(required=False)
+
+# ----------------------------------------------------------------------------
+# Document upload serializer
+# ----------------------------------------------------------------------------
+import os
+from rest_framework import serializers
+from django.core.exceptions import ValidationError
+
+class DocumentUploadSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(write_only=True)
+
+    class Meta:
+        model = Document
+        fields = ['title', 'document_type', 'document_date', 'file']
+
+    def validate_file(self, value):
+        # 1. Extract the file extension
+        ext = os.path.splitext(value.name)[1].lower()
+        
+        # 2. Define supported extensions
+        valid_extensions = ['.pdf', '.png', '.jpg', '.jpeg']
+        
+        # 3. Check extension
+        if ext not in valid_extensions:
+            raise serializers.ValidationError(
+                f"Unsupported file extension '{ext}'. Supported types are: {', '.join(valid_extensions)}"
+            )
+            
+        # 4. Optional: Check file size (e.g., limit to 5MB)
+        if value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("File size too large. Maximum limit is 5MB.")
+            
+        return value

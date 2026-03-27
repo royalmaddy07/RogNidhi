@@ -2,10 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
  
+from .models import Document
 from .serializers import PatientRegisterSerializer, DoctorRegisterSerializer, LoginRequestSerializer
 from .services import register_patient, register_doctor
 from rest_framework import status, permissions
 from .services import AuthService
+from .serializers import DocumentUploadSerializer
+from .services import DocumentService
 
 # ──────────────────────────────────────────────────────────────
 # PATIENT REGISTER VIEW
@@ -146,3 +149,71 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# --------------------------------------------------------------------------------
+# DOCUMENT VIEWS
+# --------------------------------------------------------------------------------
+
+class DocumentUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = DocumentUploadSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # Get the patient profile of the logged-in user
+            patient_profile = request.user.patient_profile
+            
+            # Save the document
+            doc = DocumentService.save_document(patient_profile, serializer.validated_data)
+            
+            return Response({
+                "message": "Document uploaded successfully",
+                "document_id": doc.id,
+                "file_path": request.build_absolute_uri(doc.file_url.url)
+            }, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DocumentDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            # We filter by both ID and patient to ensure ownership
+            document = Document.objects.get(pk=pk, patient=request.user.patient_profile)
+            
+            DocumentService.delete_document(document)
+            
+            return Response({
+                "message": "Document and clinical records deleted successfully."
+            }, status=status.HTTP_204_NO_CONTENT)
+            
+        except Document.DoesNotExist:
+            return Response({
+                "error": "Document not found or you don't have permission to delete it."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+# --------------------------------------------------------------------------------
+# PATIENT DOCUMENT UPLOAD TIMELINE VIEW 
+# --------------------------------------------------------------------------------
+class PatientTimelineView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Fetch documents for the logged-in patient
+        documents = Document.objects.filter(patient=request.user.patient_profile)
+        
+        # Serialize the data
+        data = []
+        for doc in documents:
+            data.append({
+                "id": doc.id,
+                "title": doc.title,
+                "type": doc.document_type.replace('_', ' ').title(),
+                "date": doc.document_date.strftime("%d %b") if doc.document_date else "Recent",
+                "year": doc.document_date.year if doc.document_date else "2026",
+                "file_url": request.build_absolute_uri(doc.file_url.url)
+            })
+        
+        return Response(data)
