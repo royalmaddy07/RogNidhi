@@ -164,6 +164,7 @@ class Document(models.Model):
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])]
     )
     document_date = models.DateField(blank=True, null=True)
+    file_hash     = models.CharField(max_length=64, blank=True, null=True, db_index=True)
     created_at    = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -177,6 +178,7 @@ class Document(models.Model):
             models.Index(fields=['uploaded_by'],   name='idx_doc_uploaded_by'),
             models.Index(fields=['document_type'], name='idx_doc_type'),
             models.Index(fields=['document_date'], name='idx_doc_date'),
+            models.Index(fields=['file_hash'],     name='idx_doc_hash'),
         ]
 
 
@@ -359,3 +361,47 @@ class AuditLog(models.Model):
             models.Index(fields=['target_table'], name='idx_audit_target_table'),
             models.Index(fields=['performed_at'], name='idx_audit_performed_at'),
         ]
+
+
+# ──────────────────────────────────────────────────────────────
+# CHAT SESSION
+# ──────────────────────────────────────────────────────────────
+
+class ChatSession(models.Model):
+    patient = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name='chat_sessions'
+    )
+    title = models.CharField(max_length=200, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Chat Session — {self.patient.user.get_full_name()} ({self.created_at.date()})"
+
+    class Meta:
+        db_table = 'chat_sessions'
+        ordering = ['-updated_at']
+
+
+# ──────────────────────────────────────────────────────────────
+# CHAT MESSAGE
+# ──────────────────────────────────────────────────────────────
+
+class ChatMessage(models.Model):
+    session = models.ForeignKey(
+        ChatSession,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.CharField(max_length=20, choices=[('user', 'User'), ('ai', 'AI')])
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.sender}] {self.text[:50]}"
+
+    class Meta:
+        db_table = 'chat_messages'
+        ordering = ['created_at']

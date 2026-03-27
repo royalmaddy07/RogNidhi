@@ -239,9 +239,9 @@ const Login: React.FC = () => {
         // We use the role from the API response (data.user.role) 
         // rather than the UI toggle for security.
         if (data.user.role === "patient") {
-          navigate("/Dashboard/PatientDashBoard");
+          navigate("/DashBoard/PatientDashboard");
         } else if (data.user.role === "doctor") {
-          navigate("/Dashboard/DoctorDashBoard");
+          navigate("/DashBoard/DoctorDashboard");
         } else {
           setGlobalError("User role mismatch. Contact support.");
           triggerShake();

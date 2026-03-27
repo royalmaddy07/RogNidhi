@@ -21,20 +21,22 @@ def run_ai_pipeline(file_obj, filename: str) -> dict:
         test_data = structured_output.get("tests", [])
 
         logger.info("Detecting abnormalities & generating summary...")
-        enriched_data = detect_abnormal(test_data)
-        summary = generate_patient_summary(enriched_data)
+        enriched_tests = detect_abnormal(test_data)
+        structured_output["tests"] = enriched_tests
+        summary = generate_patient_summary(enriched_tests)
 
-        timeline_date = None
-        for test in enriched_data:
-            if test.get("date"):
-                timeline_date = test["date"]
-                break
+        timeline_date = structured_output.get("report_date")
+        if not timeline_date:
+            for test in enriched_tests:
+                if test.get("date"):
+                    timeline_date = test["date"]
+                    break
 
         return {
             "success": True,
             "title": doc_title,                 
             "document_type": doc_type,         
-            "extracted_data": enriched_data,   
+            "extracted_data": structured_output, 
             "ai_summary": summary,             
             "timeline_date": timeline_date     
         }
@@ -45,8 +47,8 @@ def run_ai_pipeline(file_obj, filename: str) -> dict:
 
 
 def chat_with_rognidhi(medical_data: list, chat_history: list, new_question: str) -> str:
-    if not medical_data or not new_question:
-        return "I don't have enough information to answer that."
+    if not new_question:
+        return "Please ask a question."
         
     try:
         logger.info("Returning RogNidhi response...")

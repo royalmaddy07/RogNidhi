@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     PatientRegisterView, DoctorRegisterView, LoginView, DocumentUploadView, 
-    PatientTimelineView, DocumentDeleteView
+    PatientTimelineView, DocumentDeleteView, ChatSessionListView, ChatSessionMessageView
 )
 
 
@@ -12,4 +12,6 @@ urlpatterns = [
     path('documents/upload/', DocumentUploadView.as_view(), name='document-upload'),
     path('records/timeline/', PatientTimelineView.as_view(), name='patient-timeline'),
     path('documents/delete/<int:pk>/', DocumentDeleteView.as_view(), name='document-delete'),
+    path('chat/sessions/', ChatSessionListView.as_view(), name='chat-sessions'),
+    path('chat/sessions/<int:pk>/', ChatSessionMessageView.as_view(), name='chat-session-messages'),
 ]

@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Clock, FileUp, Share2, TrendingUp, Bell, 
-  Search, Plus, ChevronRight, Activity, LogOut, 
+  Search, Plus, ChevronRight, Activity, 
   ShieldCheck, CreditCard, Loader2, CheckCircle2, AlertCircle,
-  FileText, Trash2 // Added Trash2
+  FileText, Trash2
 } from "lucide-react";
+import Sidebar from '../../components/Sidebar';
 
 const COLORS = {
   navy: "#0A1628",
@@ -149,33 +150,7 @@ const PatientDashboard: React.FC = () => {
 
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} />
 
-      <aside style={styles.sidebar}>
-        <div style={styles.logoSection}>
-          <div style={styles.logoSquare}><ShieldCheck size={22} color={COLORS.teal} /></div>
-          <span style={styles.logoText}>RogNidhi</span>
-        </div>
-
-        <nav style={styles.navStack}>
-          <div style={styles.navItemActive}><Clock size={18} /> Timeline</div>
-          <div className="nav-item" style={styles.navItem}><TrendingUp size={18} /> Health Trends</div>
-          <div className="nav-item" style={styles.navItem}><FileUp size={18} /> My Treasury</div>
-          <div className="nav-item" style={styles.navItem}><Share2 size={18} /> Access Control</div>
-          <div className="nav-item" style={styles.navItem}><CreditCard size={18} /> Insurance</div>
-        </nav>
-
-        <div style={styles.sidebarFooter}>
-          <div style={styles.profileBrief}>
-            <div style={styles.avatar}>{user.name.charAt(0)}</div>
-            <div style={styles.profileInfo}>
-              <div style={styles.profileName}>{user.name}</div>
-              <div style={styles.profileRole}>ID: #RN-{user.id || '001'}</div>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="logout-btn" style={styles.logoutBtn}>
-            <LogOut size={18} /> Logout
-          </button>
-        </div>
-      </aside>
+      <Sidebar user={user} />
 
       <main style={styles.main}>
         <header style={styles.header}>
@@ -317,7 +292,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   profileName: { fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   profileRole: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
   logoutBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' },
-  main: { flexGrow: 1, marginLeft: 280, display: 'flex', flexDirection: 'column', minWidth: 0 },
+  main: { flexGrow: 1, marginLeft: 260, display: 'flex', flexDirection: 'column', minWidth: 0 },
   header: { height: 80, padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 90, borderBottom: `1px solid ${COLORS.border}` },
   searchBar: { display: 'flex', alignItems: 'center', gap: 12, background: '#fff', padding: '10px 18px', borderRadius: 14, width: 380, border: `1px solid ${COLORS.border}` },
   searchInput: { border: 'none', background: 'transparent', outline: 'none', fontSize: 14, fontWeight: 500, width: '100%' },

@@ -179,3 +179,21 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("File size too large. Maximum limit is 5MB.")
             
         return value
+
+# ----------------------------------------------------------------------------
+# CHAT SERIALIZERS
+# ----------------------------------------------------------------------------
+from .models import ChatSession, ChatMessage
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'sender', 'text', 'created_at']
+
+class ChatSessionSerializer(serializers.ModelSerializer):
+    messages = ChatMessageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ChatSession
+        fields = ['id', 'patient', 'title', 'created_at', 'updated_at', 'messages']
+        read_only_fields = ['patient']

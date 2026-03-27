@@ -1,9 +1,11 @@
+import datetime
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import UserProfile, PatientProfile, DoctorProfile, Document, Notification, AuditLog, Role
+from .models import UserProfile, PatientProfile, DoctorProfile, Document, MedicalRecord, Notification, AuditLog, Role, DocumentType
 from rest_framework import exceptions
+from django.core.exceptions import ValidationError
 
 def register_patient(validated_data: dict) -> User:
     """
@@ -167,15 +169,41 @@ class AuthService:
 # UPLOAD DOCUMENT SERVICE 
 # --------------------------------------------------------------------------------
 import os
-from django.conf import settings
-from .models import Document
+import sys
+import hashlib
+from pathlib import Path
 
+# Add project root to sys.path so we can import ai
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+from ai.ai import run_ai_pipeline
+
+from django.conf import settings
 class DocumentService:
     @staticmethod
+    @transaction.atomic
     def save_document(patient_profile, validated_data):
         uploaded_file = validated_data.pop('file')
-        
-        # Create the Document record
+
+        # 1. Calculate file hash for aggressive caching
+        sha256_hash = hashlib.sha256()
+        for chunk in uploaded_file.chunks():
+            sha256_hash.update(chunk)
+        file_hash = sha256_hash.hexdigest()
+
+        # REWIND THE POINTER BEFORE DOING ANYTHING ELSE
+        uploaded_file.seek(0) 
+
+        # 2. Check if THIS PATIENT already has this exact file
+        if Document.objects.filter(patient=patient_profile, file_hash=file_hash).exists():
+            raise ValidationError("This file is already in your treasury.")
+
+        # 3. Check if this file has been processed anywhere in the system before
+        # We join with MedicalRecord to ensure we reuse a SUCCESSFUL previous run
+        existing_record = MedicalRecord.objects.filter(
+            document__file_hash=file_hash
+        ).select_related('document').first()
+
+        # 3. Create the Document record
         # Django's FileField automatically handles saving to MEDIA_ROOT
         doc = Document.objects.create(
             patient=patient_profile,
@@ -183,7 +211,61 @@ class DocumentService:
             title=validated_data['title'],
             document_type=validated_data['document_type'],
             document_date=validated_data.get('document_date'),
-            file_url=uploaded_file # This saves the file and stores the path
+            file_url=uploaded_file,
+            file_hash=file_hash
+        )
+
+        if existing_record:
+            # AGGRESSIVE CACHE HIT: Reuse existing processing results
+            doc.title = existing_record.document.title
+            doc.document_type = existing_record.document.document_type
+            doc.document_date = existing_record.document.document_date
+            doc.save()
+
+            MedicalRecord.objects.create(
+                document=doc,
+                patient=patient_profile,
+                extracted_data=existing_record.extracted_data,
+                ai_summary=existing_record.ai_summary,
+                timeline_date=existing_record.timeline_date
+            )
+            return doc
+
+        # CACHE MISS: Run new AI pipeline
+        file_path_on_disk = doc.file_url.path
+        ai_result = run_ai_pipeline(file_path_on_disk, uploaded_file.name)
+                
+        if not ai_result.get("success"):
+            # Expose the AI error to the frontend so it doesn't fail silently
+            raise ValidationError(f"AI Processing failed: {ai_result.get('error')}")
+
+        # Safe Date Parsing: Ensure Django doesn't crash if AI gives a bad date
+        valid_date = None
+        timeline_str = ai_result.get("timeline_date")
+        if timeline_str:
+            try:
+                # Ensure it's valid YYYY-MM-DD
+                datetime.date.fromisoformat(timeline_str)
+                valid_date = timeline_str
+            except ValueError:
+                valid_date = None
+
+        # Update doc metadata
+        if ai_result.get("document_type") and getattr(DocumentType, ai_result["document_type"].upper(), None):
+            doc.document_type = ai_result["document_type"].lower()
+        if ai_result.get("title"):
+            doc.title = ai_result["title"]
+        if valid_date:
+            doc.document_date = valid_date
+        doc.save()
+
+        # Create the medical record
+        MedicalRecord.objects.create(
+            document=doc,
+            patient=patient_profile,
+            extracted_data=ai_result.get("extracted_data", []),
+            ai_summary=ai_result.get("ai_summary", ""),
+            timeline_date=valid_date
         )
         
         return doc

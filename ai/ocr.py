@@ -15,8 +15,12 @@ def standardize_to_jpg(file_obj, filename: str):
     try:
         if filename.lower().endswith('.pdf'):
             logger.info("Converting PDF page to image format...")
-            file_bytes = file_obj.read() if hasattr(file_obj, 'read') else file_obj
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            if isinstance(file_obj, str):
+                doc = fitz.open(file_obj)
+            else:
+                file_bytes = file_obj.read() if hasattr(file_obj, 'read') else file_obj
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+                
             page = doc.load_page(0)
             pix = page.get_pixmap(dpi=200)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)

@@ -23,14 +23,14 @@ RULES:
 SCHEMA:
 {{
   "document_title": "The name of the report (e.g., Complete Blood Count, Lipid Panel, Prescription)",
-  "document_type": "LAB_REPORT or PRESCRIPTION or DOCTOR_NOTE or OTHER",
+  "document_type": "LAB_TEST or PRESCRIPTION or DOCTOR_NOTE or OTHER",
   "tests": [
     {{
       "test_name": "Full clinical name",
       "value": "Numeric or text value",
       "unit": "Standard unit (e.g., mg/dL, %)",
       "reference_range": "The exact range provided",
-      "date": "DD.MM.YYYY"
+      "date": "YYYY-MM-DD"
     }}
   ]
 }}
