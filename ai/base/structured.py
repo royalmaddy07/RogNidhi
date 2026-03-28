@@ -24,15 +24,34 @@ SCHEMA:
 {{
   "document_title": "The name of the report (e.g., Complete Blood Count, Lipid Panel, Prescription)",
   "document_type": "LAB_REPORT or PRESCRIPTION or DISCHARGE_SUMMARY or OTHER",
+  "patient": {
+    "name": "optional",
+    "age": "number",
+    "gender": "male/female/other",
+    "patient_id": "unique identifier"
+    },
+  "doctor": {
+    "name": "",
+    "registration_number": "",
+    "specialization": ""
+    },
+  "lab": {
+    "name": "",
+    "address": "",
+    "contact": ""
+    }, 
   "tests": [
     {{
       "test_name": "Full clinical name",
+      "category": "Hematology / Biochemistry / Hormone / Imaging / etc.",
+      "method": "ELISA / PCR / Automated Analyzer",
       "value": "Numeric or text value",
       "unit": "Standard unit (e.g., mg/dL, %)",
       "reference_range": "The exact range provided",
       "date": "YYYY-MM-DD"
     }}
   ]
+  "report_date": "YYYY-MM-DD"
 }}
 
 TEXT TO PROCESS:
