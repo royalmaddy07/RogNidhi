@@ -198,3 +198,221 @@ class DocumentService:
                 os.remove(document.file_url.path)
         
         document.delete()
+
+# ──────────────────────────────────────────────────────────────
+# ACCESS CONTROL MODULE SERVICES ->
+# ──────────────────────────────────────────────────────────────
+from django.contrib.auth.models import User
+from django.utils import timezone
+from .models import AccessPermission, AccessStatus, Notification
+
+
+# ──────────────────────────────────────────────────────────────
+# REQUEST ACCESS
+# Called by: Doctor
+# Endpoint:  POST /api/access/request/
+#
+# Creates or re-activates an AccessPermission row with
+# status='pending'. Sends a notification to the patient.
+#
+# If a revoked row already exists between this doctor and
+# patient, we reuse it (reset to pending) instead of creating
+# a duplicate — enforced by unique_together('patient','doctor').
+# ──────────────────────────────────────────────────────────────
+
+def request_access(doctor: User, patient_email: str) -> AccessPermission:
+    patient = User.objects.get(email__iexact=patient_email)
+
+    # ── Reuse revoked row or create new ──
+    permission, created = AccessPermission.objects.get_or_create(
+        patient=patient,
+        doctor=doctor,
+        defaults={
+            'status':    AccessStatus.PENDING,
+            'is_active': False,
+        }
+    )
+
+    if not created:
+        # Row existed (was previously revoked) — reset it to pending
+        permission.status      = AccessStatus.PENDING
+        permission.is_active   = False
+        permission.approved_at = None
+        permission.save(update_fields=['status', 'is_active', 'approved_at'])
+
+    # ── Notify the patient ──
+    Notification.objects.create(
+        user    = patient,
+        title   = "New Access Request",
+        message = (
+            f"Dr. {doctor.get_full_name()} has requested access to your "
+            f"medical records. Please review and approve or ignore."
+        ),
+    )
+
+    return permission
+
+
+# ──────────────────────────────────────────────────────────────
+# APPROVE ACCESS
+# Called by: Patient
+# Endpoint:  POST /api/access/approve/:id/
+#
+# Sets status='active' and is_active=True.
+# Sends a notification to the doctor.
+# Raises ValueError if:
+#   - Permission doesn't belong to this patient
+#   - Permission is not in 'pending' state
+# ──────────────────────────────────────────────────────────────
+
+def approve_access(patient: User, permission_id: int) -> AccessPermission:
+
+    # ── Fetch + ownership check ──
+    try:
+        permission = AccessPermission.objects.get(
+            id=permission_id,
+            patient=patient,
+        )
+    except AccessPermission.DoesNotExist:
+        raise ValueError("Access request not found.")
+
+    # ── State check ──
+    if permission.status != AccessStatus.PENDING:
+        if permission.status == AccessStatus.ACTIVE:
+            raise ValueError("This request has already been approved.")
+        if permission.status == AccessStatus.REVOKED:
+            raise ValueError("This permission was revoked. The doctor must send a new request.")
+
+    # ── Approve ──
+    permission.status      = AccessStatus.ACTIVE
+    permission.is_active   = True
+    permission.approved_at = timezone.now()
+    permission.save(update_fields=['status', 'is_active', 'approved_at'])
+
+    # ── Notify the doctor ──
+    Notification.objects.create(
+        user    = permission.doctor,
+        title   = "Access Approved",
+        message = (
+            f"{patient.get_full_name()} has approved your request to access "
+            f"their medical records. You can now view their health timeline."
+        ),
+    )
+
+    return permission
+
+
+# ──────────────────────────────────────────────────────────────
+# REVOKE ACCESS
+# Called by: Patient
+# Endpoint:  POST /api/access/revoke/:id/
+#
+# Sets status='revoked' and is_active=False.
+# Sends a notification to the doctor.
+# Raises ValueError if:
+#   - Permission doesn't belong to this patient
+#   - Permission is already revoked or still pending
+# ──────────────────────────────────────────────────────────────
+
+def revoke_access(patient: User, permission_id: int) -> AccessPermission:
+
+    # ── Fetch + ownership check ──
+    try:
+        permission = AccessPermission.objects.get(
+            id=permission_id,
+            patient=patient,
+        )
+    except AccessPermission.DoesNotExist:
+        raise ValueError("Access permission not found.")
+
+    # ── State check ──
+    if permission.status == AccessStatus.REVOKED:
+        raise ValueError("This permission is already revoked.")
+    if permission.status == AccessStatus.PENDING:
+        raise ValueError(
+            "This request is still pending. "
+            "You can simply ignore it instead of revoking."
+        )
+
+    # ── Revoke ──
+    permission.status    = AccessStatus.REVOKED
+    permission.is_active = False
+    permission.save(update_fields=['status', 'is_active'])
+
+    # ── Notify the doctor ──
+    Notification.objects.create(
+        user    = permission.doctor,
+        title   = "Access Revoked",
+        message = (
+            f"{patient.get_full_name()} has revoked your access to their "
+            f"medical records."
+        ),
+    )
+
+    return permission
+
+
+# ──────────────────────────────────────────────────────────────
+# GET PENDING REQUESTS
+# Called by: Patient
+# Endpoint:  GET /api/access/pending/
+#
+# Returns all AccessPermission rows where:
+#   patient = request.user AND status = 'pending'
+# ──────────────────────────────────────────────────────────────
+
+def get_pending_requests(patient: User):
+    return (
+        AccessPermission.objects
+        .filter(patient=patient, status=AccessStatus.PENDING)
+        .select_related('doctor', 'doctor__doctor_profile')
+        .order_by('-granted_at')
+    )
+
+
+# ──────────────────────────────────────────────────────────────
+# GET MY DOCTORS (patient side)
+# Called by: Patient
+# Endpoint:  GET /api/access/my-doctors/
+#
+# Returns all active permissions for this patient —
+# i.e. doctors currently able to view their records.
+# ──────────────────────────────────────────────────────────────
+
+def get_my_doctors(patient: User):
+    return (
+        AccessPermission.objects
+        .filter(patient=patient, status=AccessStatus.ACTIVE)
+        .select_related('doctor', 'doctor__doctor_profile')
+        .order_by('-approved_at')
+    )
+
+
+# ──────────────────────────────────────────────────────────────
+# GET MY PATIENTS (doctor side)
+# Called by: Doctor
+# Endpoint:  GET /api/access/my-patients/
+#
+# Returns all active permissions where doctor = request.user —
+# i.e. patients whose records the doctor can currently view.
+# Supports optional search by patient name or email.
+# ──────────────────────────────────────────────────────────────
+
+def get_my_patients(doctor: User, search: str = ""):
+    qs = (
+        AccessPermission.objects
+        .filter(doctor=doctor, status=AccessStatus.ACTIVE)
+        .select_related('patient', 'patient__patient_profile')
+        .order_by('-approved_at')
+    )
+
+    if search:
+        qs = qs.filter(
+            patient__first_name__icontains=search
+        ) | qs.filter(
+            patient__last_name__icontains=search
+        ) | qs.filter(
+            patient__email__icontains=search
+        )
+
+    return qs
