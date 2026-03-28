@@ -175,9 +175,37 @@ from pathlib import Path
 
 # Add project root to sys.path so we can import ai
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-from ai.ai import run_ai_pipeline
+from ai.ai import run_ai_pipeline, update_patient_rag_index
 
 from django.conf import settings
+
+
+def _update_rag_for_patient(patient_profile):
+    """
+    Build record context dicts from all of a patient's documents and
+    incrementally update their FAISS index.  Non-fatal — errors are logged.
+    """
+    try:
+        docs = Document.objects.filter(patient=patient_profile).select_related('medical_record')
+        records = []
+        for doc in docs:
+            record_ctx = {
+                "title": doc.title,
+                "type": doc.document_type,
+                "date": str(doc.document_date) if doc.document_date else "Unknown Date",
+            }
+            if hasattr(doc, 'medical_record'):
+                record_ctx["ai_analysis"] = doc.medical_record.ai_summary
+                if doc.medical_record.extracted_data:
+                    record_ctx["structured_tests"] = doc.medical_record.extracted_data
+            records.append(record_ctx)
+
+        update_patient_rag_index(patient_profile.user.id, records)
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).error(f"_update_rag_for_patient failed: {e}")
+
+
 class DocumentService:
     @staticmethod
     @transaction.atomic
@@ -229,6 +257,10 @@ class DocumentService:
                 ai_summary=existing_record.ai_summary,
                 timeline_date=existing_record.timeline_date
             )
+
+            # Incrementally update FAISS index with newly reused record
+            _update_rag_for_patient(patient_profile)
+
             return doc
 
         # CACHE MISS: Run new AI pipeline
@@ -267,7 +299,10 @@ class DocumentService:
             ai_summary=ai_result.get("ai_summary", ""),
             timeline_date=valid_date
         )
-        
+
+        # Incrementally update FAISS index with the new record
+        _update_rag_for_patient(patient_profile)
+
         return doc
     
     @staticmethod

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Clock, FileUp, Share2, TrendingUp, Bell, 
-  Search, Plus, ChevronRight, Activity, 
+import {
+  Clock, FileUp, Share2, TrendingUp, Bell,
+  Search, Plus, ChevronRight, Activity,
   ShieldCheck, CreditCard, Loader2, CheckCircle2, AlertCircle,
   FileText, Trash2
 } from "lucide-react";
@@ -23,11 +23,12 @@ const COLORS = {
 const PatientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const [user, setUser] = useState<any>(null);
-  const [records, setRecords] = useState<any[]>([]); 
+  const [records, setRecords] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', msg: string} | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [summaries, setSummaries] = useState<{ [key: number]: string }>({});
+  const [loadingSummary, setLoadingSummary] = useState<{ [key: number]: boolean }>({});
 
   const fetchRecords = async () => {
     try {
@@ -67,11 +68,41 @@ const PatientDashboard: React.FC = () => {
     setTimeout(() => setUploadStatus(null), 3000);
   };
 
+  const handleGenerateSummary = async (id: number) => {
+    try {
+      setLoadingSummary(prev => ({ ...prev, [id]: true }));
+
+      const token = localStorage.getItem("access");
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/records/${id}/summary/`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        setSummaries(prev => ({
+          ...prev,
+          [id]: data.summary || "No summary available."
+        }));
+      } else {
+        setUploadStatus({ type: "error", msg: "Summary failed." });
+      }
+    } catch {
+      setUploadStatus({ type: "error", msg: "Server error." });
+    } finally {
+      setLoadingSummary(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-      fetchRecords(); 
+      fetchRecords();
     } else {
       navigate("/login");
     }
@@ -93,7 +124,7 @@ const PatientDashboard: React.FC = () => {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("title", file.name.split('.')[0]); 
+    formData.append("title", file.name.split('.')[0]);
     formData.append("document_type", "other");
 
     try {
@@ -106,7 +137,7 @@ const PatientDashboard: React.FC = () => {
 
       if (response.ok) {
         setUploadStatus({ type: 'success', msg: "Report added to treasury!" });
-        fetchRecords(); 
+        fetchRecords();
       } else {
         const errData = await response.json();
         const errMsg = errData.detail || errData.file?.[0] || errData.error || "Upload failed.";
@@ -161,8 +192,8 @@ const PatientDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <div style={styles.iconCircle}><Bell size={20} color={COLORS.muted} /></div>
-            <button 
-              style={{...styles.uploadBtn, opacity: isUploading ? 0.7 : 1}} 
+            <button
+              style={{ ...styles.uploadBtn, opacity: isUploading ? 0.7 : 1 }}
               onClick={triggerFileInput}
               disabled={isUploading}
             >
@@ -195,7 +226,7 @@ const PatientDashboard: React.FC = () => {
             </div>
             <div style={styles.healthScoreCard}>
               <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, letterSpacing: '0.05em' }}>HEALTH SCORE</span>
-              <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.navy }}>84<span style={{fontSize: 14, color: COLORS.muted}}>/100</span></div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.navy }}>84<span style={{ fontSize: 14, color: COLORS.muted }}>/100</span></div>
             </div>
           </div>
 
@@ -205,18 +236,21 @@ const PatientDashboard: React.FC = () => {
                 <h3 style={styles.sectionHeading}>Your Medical Timeline</h3>
                 <span onClick={fetchRecords} style={{ fontSize: 13, color: COLORS.teal, fontWeight: 700, cursor: 'pointer' }}>Refresh</span>
               </div>
-              
+
               {records.length > 0 ? (
                 records.map((rec) => (
-                  <RecordCard 
+                  <RecordCard
                     key={rec.id}
                     id={rec.id}
-                    date={`${rec.date} ${rec.year}`} 
-                    title={rec.title} 
-                    lab={rec.type} 
+                    date={`${rec.date} ${rec.year}`}
+                    title={rec.title}
+                    lab={rec.type}
                     type={rec.type}
                     url={rec.file_url}
                     onDelete={handleDelete}
+                    onSummarize={handleGenerateSummary}
+                    summary={summaries[rec.id]}
+                    isLoading={loadingSummary[rec.id]}
                   />
                 ))
               ) : (
@@ -231,7 +265,7 @@ const PatientDashboard: React.FC = () => {
               <div style={styles.glassCard}>
                 <h4 style={styles.cardHeading}>AI Health Insight</h4>
                 <div style={styles.insightBox}>
-                  <Activity size={20} color={COLORS.teal} style={{marginTop: '2px'}} />
+                  <Activity size={20} color={COLORS.teal} style={{ marginTop: '2px' }} />
                   <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, color: COLORS.navy }}>
                     Your health treasury is growing. Add more reports to unlock trend analysis.
                   </p>
@@ -245,35 +279,98 @@ const PatientDashboard: React.FC = () => {
   );
 };
 
-const RecordCard = ({ id, date, title, lab, type, url, onDelete }: any) => (
-  <div className="record-card" onClick={() => window.open(url, '_blank')} style={styles.card}>
-    <div style={styles.dateBox}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.navy, lineHeight: 1 }}>{date.split(' ')[0]}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.muted, textTransform: 'uppercase', marginTop: '4px' }}>{date.split(' ')[1]}</div>
-    </div>
-    <div style={styles.cardDivider} />
-    <div style={{ flexGrow: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.navy }}>{title}</div>
-          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>{lab}</div>
+const RecordCard = ({ 
+  id, date, title, lab, type, url, 
+  onDelete, onSummarize, summary, isLoading 
+}: any) => (
+  <div>
+    {/* ORIGINAL CARD (UNCHANGED STYLE) */}
+    <div className="record-card" onClick={() => window.open(url, '_blank')} style={styles.card}>
+      
+      <div style={styles.dateBox}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.navy, lineHeight: 1 }}>
+          {date.split(' ')[0]}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={styles.typeBadge}>{type}</span>
-          {/* TRASH CAN ICON ADDED HERE */}
-          <div 
-            className="delete-icon" 
-            onClick={(e) => {
-              e.stopPropagation(); // Stop from opening the URL
-              onDelete(id);
-            }}
-          >
-            <Trash2 size={18} />
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.muted, textTransform: 'uppercase', marginTop: '4px' }}>
+          {date.split(' ')[1]}
+        </div>
+      </div>
+
+      <div style={styles.cardDivider} />
+
+      <div style={{ flexGrow: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.navy }}>
+              {title}
+            </div>
+            <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>
+              {lab}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            
+            <span style={styles.typeBadge}>{type}</span>
+
+            {/* 🔥 NEW SUMMARY BUTTON */}
+            <button
+              style={{
+                padding: "6px 10px",
+                borderRadius: "8px",
+                border: "none",
+                background: COLORS.navyMid,
+                color: "#fff",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+                opacity: isLoading ? 0.6 : 1
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSummarize(id);
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? "..." : "Summary"}
+            </button>
+
+            {/* DELETE */}
+            <div 
+              className="delete-icon" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id);
+              }}
+            >
+              <Trash2 size={18} />
+            </div>
+
           </div>
         </div>
       </div>
+
+      <div style={styles.arrowCircle}>
+        <ChevronRight size={18} color={COLORS.muted} />
+      </div>
     </div>
-    <div style={styles.arrowCircle}><ChevronRight size={18} color={COLORS.muted} /></div>
+
+    {/* 🔥 SUMMARY OUTPUT (minimal + clean) */}
+    {summary && (
+      <div style={{
+        marginTop: 8,
+        padding: "14px",
+        background: COLORS.offWhite,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: "12px",
+        fontSize: "13px",
+        color: COLORS.navy,
+        lineHeight: 1.6
+      }}>
+        {summary}
+      </div>
+    )}
   </div>
 );
 

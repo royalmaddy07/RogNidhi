@@ -8,15 +8,15 @@ import {
 import Sidebar from "../../components/Sidebar";
 
 const COLORS = {
-  navy:        "#0A1628",
-  sessionBg:   "#182D52",        // higher contrast mid-tone
+  navy: "#0A1628",
+  sessionBg: "#182D52",        // higher contrast mid-tone
   sessionText: "rgba(255,255,255,0.85)",
-  teal:        "#00C9A7",
-  white:       "#FFFFFF",
-  offWhite:    "#F8FAFC",
-  muted:       "#64748B",
-  border:      "#E2E8F0",
-  tealLight:   "#E0FDF6",
+  teal: "#00C9A7",
+  white: "#FFFFFF",
+  offWhite: "#F8FAFC",
+  muted: "#64748B",
+  border: "#E2E8F0",
+  tealLight: "#E0FDF6",
 };
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -42,38 +42,30 @@ interface UploadStatus {
 
 const RogNidhiHistory: React.FC = () => {
   const navigate = useNavigate();
-  const [user,            setUser]            = useState<any>(null);
-  const [sessions,        setSessions]        = useState<ChatSession[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<number | "new" | null>(null);
-  const [messages,        setMessages]        = useState<Message[]>([]);
-  const [inputValue,      setInputValue]      = useState("");
-  const [isLoading,       setIsLoading]       = useState(false);
-
-  // rename
-  const [editingId,    setEditingId]    = useState<number | "new" | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
-
-  // file upload
-  const [uploadStatus,  setUploadStatus]  = useState<UploadStatus | null>(null);
-  const [isUploading,   setIsUploading]   = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const messagesEndRef  = useRef<HTMLDivElement>(null);
-  const clickTimer      = useRef<ReturnType<typeof setTimeout> | null>(null); // debounce single vs double click
-
-  /* ─── init ─── */
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) { setUser(JSON.parse(stored)); fetchSessions(); }
     else navigate("/login");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  /* ─── sessions ─── */
   const fetchSessions = async () => {
     try {
       const token = localStorage.getItem("access");
@@ -137,11 +129,17 @@ const RogNidhiHistory: React.FC = () => {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ title: newMsg.text.slice(0, 32) + "…" }),
         });
+
         if (res.ok) {
           const data = await res.json();
           targetId = data.id;
+
+          setSessions(prev => {
+            const filtered = prev.filter(s => s.id !== "new");
+            return [data, ...filtered];
+          });
+
           setActiveSessionId(targetId);
-          setSessions(prev => [data, ...prev.filter(s => s.id !== "new")]);
         }
       }
       const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${targetId}/`, {

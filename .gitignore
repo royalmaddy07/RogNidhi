@@ -9,3 +9,7 @@
 *.png
 *.jpg
 .vscode/
+
+# CRAG runtime artifacts
+ai/rag/indexes/*.faiss
+ai/rag/indexes/*.pkl

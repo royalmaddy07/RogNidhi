@@ -246,7 +246,14 @@ class ChatSessionListView(APIView):
     def post(self, request):
         title = request.data.get('title', 'New Chat')
         session = ChatSession.objects.create(patient=request.user.patient_profile, title=title)
-        return Response(ChatSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+        ChatMessage.objects.create(
+            session=session,
+            sender='ai',
+            text="Hello! I'm RogNidhi. Ask me anything about your health records."
+        )
+
+        serializer = ChatSessionSerializer(session)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request):
         ChatSession.objects.filter(patient=request.user.patient_profile).delete()
@@ -302,7 +309,12 @@ class ChatSessionMessageView(APIView):
             chat_history.pop()
             
         try:
-            ans = chat_with_rognidhi(medical_data, chat_history, question)
+            ans = chat_with_rognidhi(
+                medical_data,
+                chat_history,
+                question,
+                patient_id=request.user.id,
+            )
         except Exception as e:
             ans = "I'm having trouble analyzing your request right now. Please try again."
 
