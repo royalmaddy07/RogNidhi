@@ -44,6 +44,17 @@ const GlobalStyle = () => (
       0%   { transform: scale(1);   opacity: 0.6; }
       100% { transform: scale(1.6); opacity: 0; }
     }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.85; }
+    }
+    .logo-breathe { animation: breathe 3s ease-in-out infinite; }
+    .live-badge-pulse { animation: pulse 2s ease-in-out infinite; }
+    .hero-badge-breathe { animation: breathe 4s ease-in-out infinite; }
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-20px); }
       to   { opacity: 1; transform: translateX(0); }
@@ -212,7 +223,7 @@ const Nav = () => {
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
+        <div className="logo-breathe" style={{
           width: 34, height: 34, borderRadius: 10,
           background: `linear-gradient(135deg, ${COLORS.teal}, ${COLORS.navyMid})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -282,7 +293,7 @@ const Hero = () => (
 
     {/* Hackathon badge */}
     <div className="animate-fade-up opacity-0" style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-      <span className="tag-badge">
+      <span className="tag-badge hero-badge-breathe">
         <span>🏆</span> HackMol 7.0 — NIT Jalandhar
       </span>
     </div>
@@ -365,7 +376,7 @@ const Hero = () => (
           <div style={{ fontSize: 12, color: COLORS.muted }}>Generated for Dr. Sharma · just now</div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
-          <span style={{ background: `${COLORS.teal}22`, color: COLORS.teal, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>Live</span>
+          <span className="live-badge-pulse" style={{ background: `${COLORS.teal}22`, color: COLORS.teal, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>Live</span>
         </div>
       </div>
       {[

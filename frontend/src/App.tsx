@@ -3,29 +3,33 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from "./pages/Landing";
 import Login from "./pages/Auth/login";
 import Register from "./pages/Auth/register";
-import PatientDashboard from './pages/DashBoard/PatientDashboard';
-import DoctorDashboard from './pages/DashBoard/DoctorDashboard';
+import PatientDashboard from './pages/Dashboard/PatientDashboard';
+import DoctorDashboard from './pages/Dashboard/DoctorDashboard';
 import { GlobalChatBot } from './components/GlobalChatBot';
-import RogNidhiHistory from './pages/DashBoard/RogNidhiHistory';
+import RogNidhiHistory from './pages/Dashboard/RogNidhiHistory';
+import PatientAccessControl from "./pages/Dashboard/PatientAccessControl";
+import DoctorAccessControl from "./pages/Dashboard/DoctorAccessControl";
 
 function App() {
   return (
     <BrowserRouter>
       <GlobalChatBot />
       <Routes>
-        {/* Landing Page */}
+        {/* Public Landing & Auth */}
         <Route path="/" element={<Landing />} />
-
-        {/* Auth Pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Dashboard Routes - Matching your Login.tsx navigation logic */}
-        <Route path="/DashBoard/PatientDashboard" element={<PatientDashboard />} />
-        <Route path="/DashBoard/DoctorDashboard" element={<DoctorDashboard />} />
-        <Route path="/DashBoard/RogNidhiHistory" element={<RogNidhiHistory />} />
+        {/* Dashboard Routes */}
+        <Route path="/Dashboard/PatientDashboard" element={<PatientDashboard />} />
+        <Route path="/Dashboard/DoctorDashboard" element={<DoctorDashboard />} />
+        <Route path="/Dashboard/RogNidhiHistory" element={<RogNidhiHistory />} />
 
-        {/* Fallback: Redirect unknown routes to Landing */}
+        {/* Access Control Routes */}
+        <Route path="/access-control" element={<PatientAccessControl />} />
+        <Route path="/doctor-access-control" element={<DoctorAccessControl />} />
+
+        {/* Wildcard Fallback: MUST BE LAST */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

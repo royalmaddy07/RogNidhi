@@ -237,55 +237,26 @@ class MedicalRecord(models.Model):
 # returning any patient data to a doctor.
 # ──────────────────────────────────────────────────────────────
 
+class AccessStatus(models.TextChoices):
+    PENDING = 'pending', 'Pending'
+    ACTIVE  = 'active',  'Active'
+    REVOKED = 'revoked', 'Revoked'
+
 class AccessPermission(models.Model):
-    patient = models.ForeignKey(
-        PatientProfile,
-        on_delete=models.CASCADE,
-        related_name='permissions_granted'
-    )
-    doctor = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='permissions_received'
-    )
-    granted_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
-    is_active  = models.BooleanField(default=True)
+    patient     = models.ForeignKey(User, on_delete=models.CASCADE, related_name='permissions_granted')
+    doctor      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='permissions_received')
+    status      = models.CharField(max_length=10, choices=AccessStatus.choices, default=AccessStatus.PENDING)
+    granted_at  = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(blank=True, null=True)
+    expires_at  = models.DateTimeField(blank=True, null=True)
+    is_active   = models.BooleanField(default=False)
 
     def is_valid(self):
-        """
-        Use this in every view that returns patient data to a doctor.
-
-        Example usage in a view:
-            perm = AccessPermission.objects.get(patient=patient, doctor=request.user)
-            if not perm.is_valid():
-                return Response({'error': 'Access denied'}, status=403)
-        """
-        if not self.is_active:
-            return False
-        if self.expires_at and self.expires_at < timezone.now():
-            # Auto-expire: mark inactive so future checks are faster
-            self.is_active = False
-            self.save(update_fields=['is_active'])
-            return False
-        return True
-
-    def __str__(self):
-        return (
-            f"{self.patient.get_full_name()} → "
-            f"Dr. {self.doctor.get_full_name()} "
-            f"({'active' if self.is_active else 'revoked'})"
-        )
+        return self.status == AccessStatus.ACTIVE and self.is_active
 
     class Meta:
         db_table        = 'access_permissions'
         unique_together = ('patient', 'doctor')
-        indexes         = [
-            models.Index(fields=['patient'],   name='idx_perm_patient'),
-            models.Index(fields=['doctor'],    name='idx_perm_doctor'),
-            models.Index(fields=['is_active'], name='idx_perm_active'),
-        ]
-
 
 # ──────────────────────────────────────────────────────────────
 # NOTIFICATION

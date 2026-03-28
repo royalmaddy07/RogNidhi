@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
  
 from .models import Document
 from .serializers import PatientRegisterSerializer, DoctorRegisterSerializer, LoginRequestSerializer
@@ -9,6 +9,23 @@ from rest_framework import status, permissions
 from .services import AuthService
 from .serializers import DocumentUploadSerializer
 from .services import DocumentService
+
+from rest_framework import status
+
+from .models import Role
+from .serializers import (
+    AccessRequestSerializer,
+    AccessPermissionSerializer,
+    MyPatientSerializer,
+)
+from .services import (
+    request_access,
+    approve_access,
+    revoke_access,
+    get_pending_requests,
+    get_my_doctors,
+    get_my_patients,
+)
 
 # ──────────────────────────────────────────────────────────────
 # PATIENT REGISTER VIEW
@@ -331,3 +348,255 @@ class ChatSessionMessageView(APIView):
             return Response({"message": "Chat session deleted."}, status=status.HTTP_204_NO_CONTENT)
         except ChatSession.DoesNotExist:
             return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+# ──────────────────────────────────────────────────────────────
+# ACCESS CONTROL VIEWS ->
+# POST /api/auth/register/doctor/
+# ──────────────────────────────────────────────────────────────
+
+# ──────────────────────────────────────────────────────────────
+# ROLE GUARD HELPERS
+#
+# Used at the top of each view to reject wrong-role requests
+# before touching any business logic.
+# Returns a 403 Response if the role doesn't match, else None.
+# ──────────────────────────────────────────────────────────────
+
+def require_role(user, required_role: str):
+    """
+    Returns a 403 Response if user's role != required_role.
+    Returns None if role is correct (caller proceeds normally).
+
+    Usage:
+        guard = require_role(request.user, Role.DOCTOR)
+        if guard: return guard
+    """
+    try:
+        if user.userprofile.role != required_role:
+            return Response(
+                {"error": f"Only {required_role}s can perform this action."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    except Exception:
+        return Response(
+            {"error": "User profile not found."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    return None
+
+
+# ──────────────────────────────────────────────────────────────
+# REQUEST ACCESS VIEW
+# POST /api/access/request/
+# Role: Doctor only
+#
+# Doctor provides patient_email.
+# Creates a pending AccessPermission + notifies patient.
+# ──────────────────────────────────────────────────────────────
+
+class RequestAccessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.DOCTOR)
+        if guard:
+            return guard
+
+        # ── Validate ──
+        serializer = AccessRequestSerializer(
+            data=request.data,
+            context={'request': request}   # needed for doctor identity in validate()
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # ── Create request ──
+        try:
+            request_access(
+                doctor        = request.user,
+                patient_email = serializer.validated_data['patient_email'],
+            )
+        except Exception:
+            return Response(
+                {"error": "Could not send access request. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {"message": "Access request sent successfully. The patient will be notified."},
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ──────────────────────────────────────────────────────────────
+# PENDING REQUESTS VIEW
+# GET /api/access/pending/
+# Role: Patient only
+#
+# Returns all pending access requests waiting for this
+# patient's approval.
+# ──────────────────────────────────────────────────────────────
+
+class PendingRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.PATIENT)
+        if guard:
+            return guard
+
+        permissions = get_pending_requests(patient=request.user)
+        serializer  = AccessPermissionSerializer(permissions, many=True)
+
+        return Response(
+            {
+                "count":   permissions.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+# ──────────────────────────────────────────────────────────────
+# APPROVE ACCESS VIEW
+# POST /api/access/approve/<int:permission_id>/
+# Role: Patient only
+#
+# Patient approves a pending request.
+# Sets status='active', notifies doctor.
+# ──────────────────────────────────────────────────────────────
+
+class ApproveAccessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, permission_id: int):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.PATIENT)
+        if guard:
+            return guard
+
+        try:
+            approve_access(
+                patient       = request.user,
+                permission_id = permission_id,
+            )
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception:
+            return Response(
+                {"error": "Could not approve request. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {"message": "Access approved. The doctor can now view your records."},
+            status=status.HTTP_200_OK
+        )
+
+
+# ──────────────────────────────────────────────────────────────
+# REVOKE ACCESS VIEW
+# POST /api/access/revoke/<int:permission_id>/
+# Role: Patient only
+#
+# Patient revokes an active permission.
+# Sets status='revoked', notifies doctor.
+# ──────────────────────────────────────────────────────────────
+
+class RevokeAccessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, permission_id: int):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.PATIENT)
+        if guard:
+            return guard
+
+        try:
+            revoke_access(
+                patient       = request.user,
+                permission_id = permission_id,
+            )
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception:
+            return Response(
+                {"error": "Could not revoke access. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {"message": "Access revoked successfully."},
+            status=status.HTTP_200_OK
+        )
+
+
+# ──────────────────────────────────────────────────────────────
+# MY DOCTORS VIEW  (patient sees who has access)
+# GET /api/access/my-doctors/
+# Role: Patient only
+# ──────────────────────────────────────────────────────────────
+
+class MyDoctorsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.PATIENT)
+        if guard:
+            return guard
+
+        permissions = get_my_doctors(patient=request.user)
+        serializer  = AccessPermissionSerializer(permissions, many=True)
+
+        return Response(
+            {
+                "count":   permissions.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+# ──────────────────────────────────────────────────────────────
+# MY PATIENTS VIEW  (doctor sees who granted them access)
+# GET /api/access/my-patients/
+# Role: Doctor only
+#
+# Supports optional ?search=query param for patient name/email.
+# ──────────────────────────────────────────────────────────────
+
+class MyPatientsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.DOCTOR)
+        if guard:
+            return guard
+
+        search      = request.query_params.get('search', '').strip()
+        permissions = get_my_patients(doctor=request.user, search=search)
+        serializer  = MyPatientSerializer(permissions, many=True)
+
+        return Response(
+            {
+                "count":   permissions.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
