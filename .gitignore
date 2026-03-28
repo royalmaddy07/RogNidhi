@@ -9,3 +9,6 @@
 *.png
 *.jpg
 .vscode/
+
+*.faiss
+*.pkl
