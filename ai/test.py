@@ -1,9 +1,9 @@
 import os
 import json
 import logging
-from ai import run_ai_pipeline
+from .ai import run_ai_pipeline
 
-TEST_IMAGE_PATH = "image copy.png" 
+TEST_IMAGE_PATH = "image copy 3.png" 
 
 logging.basicConfig(
     level=logging.INFO, 
