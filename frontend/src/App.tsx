@@ -9,6 +9,7 @@ import { GlobalChatBot } from './components/GlobalChatBot';
 import RogNidhiHistory from './pages/Dashboard/RogNidhiHistory';
 import PatientAccessControl from "./pages/Dashboard/PatientAccessControl";
 import DoctorAccessControl from "./pages/Dashboard/DoctorAccessControl";
+import DoctorPatientRecords from "./pages/Dashboard/DoctorPatientRecords";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         {/* Dashboard Routes */}
         <Route path="/Dashboard/PatientDashboard" element={<PatientDashboard />} />
         <Route path="/Dashboard/DoctorDashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/patient-records/:patientId" element={<DoctorPatientRecords />} />
         <Route path="/Dashboard/RogNidhiHistory" element={<RogNidhiHistory />} />
 
         {/* Access Control Routes */}

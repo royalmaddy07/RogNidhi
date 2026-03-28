@@ -5,6 +5,7 @@ from .views import (
 )
 from .views import (
     RequestAccessView, PendingRequestsView, ApproveAccessView, RevokeAccessView, MyDoctorsView, MyPatientsView,
+    PatientDocumentsForDoctorView,
 )
 
 
@@ -25,4 +26,5 @@ urlpatterns = [
     path('access/revoke/<int:permission_id>/',  RevokeAccessView.as_view(), name='access-revoke'),
     path('access/my-doctors/', MyDoctorsView.as_view(), name='my-doctors'),
     path('access/my-patients/', MyPatientsView.as_view(), name='my-patients'),
+    path('access/patient-documents/<int:patient_id>/', PatientDocumentsForDoctorView.as_view(), name='patient-documents-for-doctor'),
 ]

@@ -26,6 +26,7 @@ const COLORS = {
 
 interface Patient {
   id: number;
+  patient_id: number;
   status: "pending" | "active" | "revoked";
   granted_at: string;
   approved_at: string | null;
@@ -318,7 +319,7 @@ const DoctorDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ textAlign: "right" }}>
                         <div style={{
                           fontSize: 10, fontWeight: 700, color: COLORS.muted,
@@ -334,16 +335,16 @@ const DoctorDashboard: React.FC = () => {
                             : "—"}
                         </div>
                       </div>
-                      <div style={{
-                        background: `${COLORS.teal}18`,
-                        color: COLORS.teal,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: "4px 12px",
-                        borderRadius: 20,
-                      }}>
-                        Active
-                      </div>
+                      <button
+                        className="doc-view-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/doctor/patient-records/${patient.patient_id}`);
+                        }}
+                      >
+                        <Eye size={14} />
+                        View Records
+                      </button>
                     </div>
                   </div>
                 ))

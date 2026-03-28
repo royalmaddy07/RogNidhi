@@ -600,3 +600,105 @@ class MyPatientsView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+# ──────────────────────────────────────────────────────────────
+# PATIENT DOCUMENTS FOR DOCTOR VIEW
+# GET /api/access/patient-documents/<int:patient_id>/
+# Role: Doctor only
+#
+# Returns all documents for a patient that the doctor has
+# active access to. Includes AI summaries from MedicalRecord.
+# Creates an AuditLog entry for each viewing.
+# ──────────────────────────────────────────────────────────────
+
+from .models import AccessPermission, AccessStatus, AuditLog, MedicalRecord
+
+class PatientDocumentsForDoctorView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, patient_id: int):
+
+        # ── Role guard ──
+        guard = require_role(request.user, Role.DOCTOR)
+        if guard:
+            return guard
+
+        # ── Verify active access ──
+        has_access = AccessPermission.objects.filter(
+            doctor=request.user,
+            patient__id=patient_id,
+            status=AccessStatus.ACTIVE,
+        ).exists()
+
+        if not has_access:
+            return Response(
+                {"error": "You do not have active access to this patient's records."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # ── Fetch patient info ──
+        try:
+            from django.contrib.auth.models import User as AuthUser
+            patient_user = AuthUser.objects.select_related('patient_profile').get(id=patient_id)
+        except AuthUser.DoesNotExist:
+            return Response(
+                {"error": "Patient not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # ── Fetch documents ──
+        documents = (
+            Document.objects
+            .filter(patient=patient_user.patient_profile)
+            .select_related('medical_record')
+            .order_by('-document_date', '-created_at')
+        )
+
+        data = []
+        for doc in documents:
+            record = {
+                "id": doc.id,
+                "title": doc.title,
+                "type": doc.document_type.replace('_', ' ').title(),
+                "raw_type": doc.document_type,
+                "date": doc.document_date.strftime("%d %b %Y") if doc.document_date else "Recent",
+                "file_url": request.build_absolute_uri(doc.file_url.url),
+                "ai_summary": None,
+                "extracted_data": None,
+            }
+            if hasattr(doc, 'medical_record') and doc.medical_record:
+                record["ai_summary"] = doc.medical_record.ai_summary
+                record["extracted_data"] = doc.medical_record.extracted_data
+            data.append(record)
+
+        # ── Audit log ──
+        AuditLog.objects.create(
+            user=request.user,
+            action='patient_documents_viewed',
+            target_table='documents',
+            target_id=patient_id,
+        )
+
+        # ── Build patient info ──
+        patient_info = {
+            "id": patient_user.id,
+            "name": patient_user.get_full_name(),
+            "email": patient_user.email,
+        }
+        try:
+            pp = patient_user.patient_profile
+            patient_info["blood_group"] = pp.blood_group
+            patient_info["dob"] = str(pp.dob) if pp.dob else None
+            patient_info["allergies"] = pp.allergies
+        except Exception:
+            pass
+
+        return Response(
+            {
+                "patient": patient_info,
+                "count": len(data),
+                "documents": data,
+            },
+            status=status.HTTP_200_OK,
+        )

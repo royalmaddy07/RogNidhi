@@ -29,6 +29,7 @@ const COLORS = {
 
 interface Patient {
   id: number;
+  patient_id: number;
   status: "pending" | "active" | "revoked";
   granted_at: string;
   approved_at: string | null;

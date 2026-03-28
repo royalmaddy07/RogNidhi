@@ -328,6 +328,7 @@ class AccessPermissionSerializer(serializers.ModelSerializer):
 # ──────────────────────────────────────────────────────────────
 
 class MyPatientSerializer(serializers.ModelSerializer):
+    patient_id    = serializers.SerializerMethodField()
     patient_name  = serializers.SerializerMethodField()
     patient_email = serializers.SerializerMethodField()
     blood_group   = serializers.SerializerMethodField()
@@ -339,10 +340,14 @@ class MyPatientSerializer(serializers.ModelSerializer):
             'status',
             'granted_at',
             'approved_at',
+            'patient_id',
             'patient_name',
             'patient_email',
             'blood_group',
         ]
+
+    def get_patient_id(self, obj):
+        return obj.patient.id
 
     def get_patient_name(self, obj):
         return obj.patient.get_full_name()
