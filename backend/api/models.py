@@ -377,3 +377,17 @@ class ChatMessage(models.Model):
     class Meta:
         db_table = 'chat_messages'
         ordering = ['created_at']
+
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+@receiver(post_delete, sender=Document)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem when corresponding `Document` object is deleted.
+    """
+    if instance.file_url:
+        try:
+            instance.file_url.delete(save=False)
+        except Exception:
+            pass

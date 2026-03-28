@@ -33,10 +33,19 @@ def run_ai_pipeline(file_obj, filename: str, patient_id=None) -> dict:
 
         logger.info("Structuring data..")
         structured_output = extract_limited(text, context_hint)
+
+        if not isinstance(structured_output, dict):
+            # If the LLM returned a raw list of tests instead of a structured dict
+            if isinstance(structured_output, list):
+                structured_output = {"tests": structured_output, "document_title": "Unknown", "document_type": "OTHER"}
+            else:
+                structured_output = {"tests": [], "document_title": "Unknown", "document_type": "OTHER"}
         
         doc_title = structured_output.get("document_title", "Medical Document")
         doc_type = structured_output.get("document_type", "OTHER")
         test_data = structured_output.get("tests", [])
+        if not isinstance(test_data, list):
+            test_data = [test_data]
 
         logger.info("Detecting abnormalities & generating summary...")
         enriched_tests = detect_abnormal(test_data)

@@ -30,22 +30,22 @@ SCHEMA:
 {{
   "document_title": "The name of the report (e.g., Complete Blood Count, Lipid Panel, Prescription)",
   "document_type": "LAB_REPORT or PRESCRIPTION or DISCHARGE_SUMMARY or OTHER",
-  "patient": {
+  "patient": {{
     "name": "optional",
     "age": "number",
     "gender": "male/female/other",
     "patient_id": "unique identifier"
-    },
-  "doctor": {
+    }},
+  "doctor": {{
     "name": "",
     "registration_number": "",
     "specialization": ""
-    },
-  "lab": {
+    }},
+  "lab": {{
     "name": "",
     "address": "",
     "contact": ""
-    }, 
+    }}, 
   "tests": [
     {{
       "test_name": "Full clinical name",

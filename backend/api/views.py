@@ -194,6 +194,9 @@ class DocumentUploadView(APIView):
                 from django.core.exceptions import ValidationError
                 if isinstance(e, ValidationError):
                     return Response({"detail": str(e.message)}, status=status.HTTP_409_CONFLICT)
+                # If it's an AI processing failure, return 422
+                if isinstance(e, ValueError):
+                    return Response({"detail": str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
                 raise e
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

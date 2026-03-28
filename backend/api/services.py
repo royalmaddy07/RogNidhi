@@ -264,8 +264,14 @@ class DocumentService:
         ai_result = run_ai_pipeline(file_path_on_disk, uploaded_file.name, patient_id=patient_profile.user.id)
                 
         if not ai_result.get("success"):
-            # Expose the AI error to the frontend so it doesn't fail silently
-            raise ValidationError(f"AI Processing failed: {ai_result.get('error')}")
+            # Clean up the file from disk since the transaction will roll back
+            if doc.file_url:
+                try:
+                    doc.file_url.delete(save=False)
+                except Exception:
+                    pass
+            # Expose the AI error to the frontend using ValueError to differentiate from 409 Conflict duplicates
+            raise ValueError(f"AI Processing failed: {ai_result.get('error')}")
 
         # Safe Date Parsing: Ensure Django doesn't crash if AI gives a bad date
         valid_date = None
@@ -310,8 +316,11 @@ class DocumentService:
         patient_profile  = document.patient
 
         if document.file_url:
-            if os.path.isfile(document.file_url.path):
-                os.remove(document.file_url.path)
+            try:
+                document.file_url.delete(save=False)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to delete file from storage: {e}")
         
         document.delete()
 

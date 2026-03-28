@@ -586,12 +586,16 @@ const HealthTrends: React.FC = () => {
               >
                 <ResponsiveContainer width="100%" height={280}>
                   <RadarChart data={radarData} margin={{ top: 8, right: 24, left: 24, bottom: 8 }}>
+                    {/* @ts-ignore - Recharts types conflict with React 19 */}
                     <PolarGrid stroke={COLORS.border} />
+                    {/* @ts-ignore */}
                     <PolarAngleAxis
                       dataKey="subject"
                       tick={{ fontSize: 10, fill: COLORS.navy, fontWeight: 600 }}
                     />
+                    {/* @ts-ignore */}
                     <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                    {/* @ts-ignore */}
                     <Radar
                       name="Score"
                       dataKey="score"

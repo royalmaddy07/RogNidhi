@@ -32,7 +32,11 @@ def parse_range(r: str):
 def detect_abnormal(data: list):
     logger.info(f"Running abnormality detection on {len(data)} extracted tests...")
     
+    safe_data = []
     for item in data:
+        if not isinstance(item, dict):
+            continue
+        
         val_str = item.get("value", "")
         range_str = item.get("reference_range", "")
         val = clean_number(val_str)
@@ -42,6 +46,7 @@ def detect_abnormal(data: list):
                 item["status"] = "INFO"
             else:
                 item["status"] = "UNKNOWN"
+            safe_data.append(item)
             continue
 
         low, high = parse_range(range_str)
@@ -55,8 +60,10 @@ def detect_abnormal(data: list):
         else:
             item["status"] = "NORMAL"
 
+        safe_data.append(item)
+
     logger.info("Abnormality detection complete.")
-    return data
+    return safe_data
 
 def generate_patient_summary(data: list):
     logger.info("Generating Patient Summary via Groq...")
