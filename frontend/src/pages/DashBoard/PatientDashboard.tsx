@@ -136,6 +136,24 @@ const PatientDashboard: React.FC = () => {
         .logout-btn:hover { background: #fee2e2 !important; color: #ef4444 !important; }
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+          50% { transform: scale(1.03); box-shadow: 0 6px 20px rgba(0,201,167,0.12); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        .health-score-breathe { animation: breathe 3s ease-in-out infinite; }
+        .bell-breathe { animation: pulse 2.5s ease-in-out infinite; }
+
+        .upload-btn-hover .upload-plus-icon {
+          display: inline-flex;
+          transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .upload-btn-hover:hover .upload-plus-icon {
+          transform: rotate(90deg);
+        }
         
         .delete-icon { 
           padding: 8px; 
@@ -160,13 +178,14 @@ const PatientDashboard: React.FC = () => {
             <input type="text" placeholder="Search medical history..." style={styles.searchInput} />
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <div style={styles.iconCircle}><Bell size={20} color={COLORS.muted} /></div>
+            <div className="bell-breathe" style={styles.iconCircle}><Bell size={20} color={COLORS.muted} /></div>
             <button 
+              className="upload-btn-hover"
               style={{...styles.uploadBtn, opacity: isUploading ? 0.7 : 1}} 
               onClick={triggerFileInput}
               disabled={isUploading}
             >
-              {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+              {isUploading ? <Loader2 size={18} className="animate-spin" /> : <span className="upload-plus-icon"><Plus size={18} /></span>}
               {isUploading ? "Uploading..." : "Upload Record"}
             </button>
           </div>
@@ -193,7 +212,7 @@ const PatientDashboard: React.FC = () => {
               <h1 style={styles.pageTitle}>Welcome back, {user.name.split(' ')[0]}</h1>
               <p style={styles.pageSubtitle}>Your lifelong health records, protected and organized.</p>
             </div>
-            <div style={styles.healthScoreCard}>
+            <div className="health-score-breathe" style={styles.healthScoreCard}>
               <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, letterSpacing: '0.05em' }}>HEALTH SCORE</span>
               <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.navy }}>84<span style={{fontSize: 14, color: COLORS.muted}}>/100</span></div>
             </div>

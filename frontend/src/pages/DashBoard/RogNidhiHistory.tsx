@@ -295,6 +295,16 @@ const RogNidhiHistory: React.FC = () => {
 
         .animate-spin { animation: _spin 1s linear infinite; }
         @keyframes _spin { to { transform: rotate(360deg); } }
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.06); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.85; }
+        }
+        .bot-icon-breathe { animation: breathe 3s ease-in-out infinite; }
+        .new-chat-pulse { animation: pulse 2.5s ease-in-out infinite; }
 
         .sess-item { transition: background 0.15s ease; cursor: pointer; border-radius: 8px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; user-select: none; }
         .sess-item:hover { background: rgba(255,255,255,0.1); }
@@ -433,7 +443,7 @@ const RogNidhiHistory: React.FC = () => {
           borderBottom: `1px solid ${COLORS.border}`, flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: COLORS.tealLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className="bot-icon-breathe" style={{ width: 34, height: 34, borderRadius: 8, background: COLORS.tealLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Bot size={18} color={COLORS.teal} />
             </div>
             <div>
@@ -570,7 +580,7 @@ const RogNidhiHistory: React.FC = () => {
           </div>
         ) : (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, color: COLORS.muted }}>
-            <div style={{ width: 52, height: 52, borderRadius: 12, background: COLORS.tealLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className="bot-icon-breathe" style={{ width: 52, height: 52, borderRadius: 12, background: COLORS.tealLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Bot size={26} color={COLORS.teal} />
             </div>
             <div style={{ textAlign: "center" }}>
@@ -579,6 +589,7 @@ const RogNidhiHistory: React.FC = () => {
             </div>
             <button
               onClick={createNewSession}
+              className="new-chat-pulse"
               style={{ background: COLORS.teal, color: COLORS.navy, border: "none", padding: "9px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}
             >
               <Plus size={14} /> New Chat

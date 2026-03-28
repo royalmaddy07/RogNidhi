@@ -139,7 +139,7 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
             }}
           >
             {/* Icon */}
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,201,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="gcb-icon-breathe" style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,201,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Sparkles size={15} color={COLORS.teal} />
             </div>
 
@@ -199,7 +199,7 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
               display: 'flex', alignItems: 'center', gap: 12,
               flexShrink: 0,
             }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(0,201,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="gcb-icon-breathe" style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(0,201,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Sparkles size={16} color={COLORS.teal} />
               </div>
               <div style={{ flex: 1 }}>
@@ -238,6 +238,11 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
                 .gcb-scroll::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 4px; }
                 .gcb-spin { animation: gcb-spin 1s linear infinite; }
                 @keyframes gcb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes gcb-breathe {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.08); }
+                }
+                .gcb-icon-breathe { animation: gcb-breathe 3s ease-in-out infinite; }
               `}</style>
               <AnimatePresence initial={false}>
                 {messages.map(msg => (

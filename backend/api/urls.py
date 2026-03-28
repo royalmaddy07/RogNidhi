@@ -3,6 +3,10 @@ from .views import (
     PatientRegisterView, DoctorRegisterView, LoginView, DocumentUploadView, 
     PatientTimelineView, DocumentDeleteView, ChatSessionListView, ChatSessionMessageView
 )
+from .views import (
+    RequestAccessView, PendingRequestsView, ApproveAccessView, RevokeAccessView, MyDoctorsView, MyPatientsView,
+    PatientDocumentsForDoctorView,
+)
 
 
 urlpatterns = [
@@ -14,4 +18,13 @@ urlpatterns = [
     path('documents/delete/<int:pk>/', DocumentDeleteView.as_view(), name='document-delete'),
     path('chat/sessions/', ChatSessionListView.as_view(), name='chat-sessions'),
     path('chat/sessions/<int:pk>/', ChatSessionMessageView.as_view(), name='chat-session-messages'),
+
+    # ── Access Control ──
+    path('access/request/', RequestAccessView.as_view(), name='access-request'),
+    path('access/pending/', PendingRequestsView.as_view(), name='access-pending'),
+    path('access/approve/<int:permission_id>/', ApproveAccessView.as_view(), name='access-approve'),
+    path('access/revoke/<int:permission_id>/',  RevokeAccessView.as_view(), name='access-revoke'),
+    path('access/my-doctors/', MyDoctorsView.as_view(), name='my-doctors'),
+    path('access/my-patients/', MyPatientsView.as_view(), name='my-patients'),
+    path('access/patient-documents/<int:patient_id>/', PatientDocumentsForDoctorView.as_view(), name='patient-documents-for-doctor'),
 ]

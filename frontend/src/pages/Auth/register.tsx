@@ -74,6 +74,11 @@ const GlobalRegisterStyle = () => (
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .logo-breathe { animation: breathe 3s ease-in-out infinite; }
 
     .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-shake    { animation: shake 0.4s ease; }
@@ -371,7 +376,7 @@ const Register: React.FC = () => {
 
           {/* ── Header ── */}
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{
+            <div className="logo-breathe" style={{
               width: 44, height: 44, borderRadius: 12,
               background: `linear-gradient(135deg, ${COLORS.teal}, ${COLORS.navyMid})`,
               display: "flex", alignItems: "center", justifyContent: "center",
