@@ -1,83 +1,71 @@
-import requests
-import base64
-import os
-import io
 import logging
-import fitz 
-from PIL import Image
-from dotenv import load_dotenv
+from .ocr import extract_text
+from .structured import extract_limited
+from .chat import detect_abnormal, generate_doctor_summary, generate_patient_summary, ask_rognidhi
 
-load_dotenv()
-API_KEY = os.getenv("NVIDIA_API_KEY")
 logger = logging.getLogger(__name__)
 
-def standardize_to_jpg(file_obj, filename: str):
+def run_ai_pipeline(file_obj, filename: str) -> dict:
     try:
-        if filename.lower().endswith('.pdf'):
-            logger.info("Converting PDF page to image format...")
-            if isinstance(file_obj, str):
-                doc = fitz.open(file_obj)
-            else:
-                file_bytes = file_obj.read() if hasattr(file_obj, 'read') else file_obj
-                doc = fitz.open(stream=file_bytes, filetype="pdf")
-                
-            page = doc.load_page(0)
-            pix = page.get_pixmap(dpi=200)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        else:
-            logger.info("Processing standard image format...")
-            img = Image.open(file_obj)
-            if img.mode != 'RGB': img = img.convert('RGB')
+        logger.info(f"Starting AI pipeline for: {filename}")
 
-        img.thumbnail((1600, 1600))
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG")
-        return base64.b64encode(buf.getvalue()).decode('utf-8')
+        text = extract_text(file_obj, filename)
+        if not text:
+            return {"success": False, "error": "Could not extract text from the document. Please ensure the file is clear."}
+
+        logger.info("Structuring data..")
+        structured_output = extract_limited(text)
+        
+        doc_title = structured_output.get("document_title", "Medical Document")
+        doc_type = structured_output.get("document_type", "OTHER")
+        test_data = structured_output.get("tests", [])
+
+        logger.info("Detecting abnormalities & generating summary...")
+        enriched_tests = detect_abnormal(test_data)
+        structured_output["tests"] = enriched_tests
+        summary = generate_patient_summary(enriched_tests)
+
+        timeline_date = structured_output.get("report_date")
+        if not timeline_date:
+            for test in enriched_tests:
+                if test.get("date"):
+                    timeline_date = test["date"]
+                    break
+
+        return {
+            "success": True,
+            "title": doc_title,                 
+            "document_type": doc_type,         
+            "extracted_data": structured_output, 
+            "ai_summary": summary,             
+            "timeline_date": timeline_date     
+        }
         
     except Exception as e:
-        logger.error(f"File Processing Error: {e}")
-        return None
+        logger.error(f"AI Pipeline crashed: {str(e)}")
+        return {"success": False, "error": "An internal error occurred while processing the document."}
 
-def extract_text(file_obj, filename="document.jpg"):
-    logger.info(f"Starting OCR extraction for: {filename}")
-    
-    img_b64 = standardize_to_jpg(file_obj, filename)
-    if not img_b64: 
-        logger.error("Failed to process image/pdf into base64.")
-        return None
-    
-    image_data_url = f"data:image/jpeg;base64,{img_b64}"
-    url = "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-ocr"
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-    payload = {
-        "input": [{"type": "image_url", "url": image_data_url}],
-        "merge_levels": ["paragraph"] 
-    }
 
+def chat_with_rognidhi(medical_data: list, chat_history: list, new_question: str) -> str:
+    if not new_question:
+        return "Please ask a question."
+        
     try:
-        logger.info("Sending payload to NVIDIA NeMo OCR API...")
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
-        
-        if response.status_code != 200:
-            logger.error(f"NVIDIA API Error ({response.status_code}): {response.text}")
-            return None
-
-        result = response.json()
-        lines = []
-        for detection in result.get("data", []):
-            for item in detection.get("text_detections", []):
-                text = item.get("text_prediction", {}).get("text", "")
-                if text.strip():
-                    lines.append(text.strip())
-        
-        extracted_text = "\n".join(lines)
-        logger.info(f"OCR success. Extracted {len(lines)} blocks of text.")
-        return extracted_text
-
+        logger.info("Returning RogNidhi response...")
+        recent_history = chat_history[-6:] if chat_history else []
+        return ask_rognidhi(medical_data, new_question, recent_history)
     except Exception as e:
-        logger.error(f"OCR Connection Error: {e}")
-        return None
+        logger.error(f"Chat Error: {e}")
+        return "I'm having trouble analyzing your report right now. Please try again."
+    
+
+def get_doctor_brief(medical_data: list) -> str:
+    if not medical_data:
+        return "No structured data available for this report."
+        
+    try:
+        logger.info("Generating Doctor Summary...")
+        return generate_doctor_summary(medical_data)
+    except Exception as e:
+        logger.error(f"Doctor Summary Error: {e}")
+        return "I'm having trouble generating clinical brief report right now. Please try again."
