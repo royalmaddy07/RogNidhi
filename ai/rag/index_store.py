@@ -5,7 +5,6 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# Resolve storage directory relative to this file
 _INDEXES_DIR = os.path.join(os.path.dirname(__file__), "indexes")
 os.makedirs(_INDEXES_DIR, exist_ok=True)
 
@@ -75,16 +74,13 @@ def update_patient_index(patient_id: str | int, new_chunks: list[str], new_metas
     from .embedder import embed_texts
     import faiss
 
-    # Embed new chunks
     new_embeddings = embed_texts(new_chunks)  # shape (N, 384)
 
-    # Load existing or create fresh
     index, meta_list = _load_raw(patient_id)
     if index is None:
         index = faiss.IndexFlatIP(EMBEDDING_DIM)
         logger.info(f"Created new FAISS index for patient {patient_id}.")
 
-    # Store chunk text inside metadata for retrieval
     for chunk_text, meta in zip(new_chunks, new_metas):
         meta["text"] = chunk_text
 
@@ -138,7 +134,7 @@ def search_index(patient_id: str | int, query_text: str, top_k: int = 5) -> list
         logger.info(f"No index for patient {patient_id} — returning empty results.")
         return []
 
-    query_vec = embed_query(query_text)  # shape (1, 384)
+    query_vec = embed_query(query_text)
     k = min(top_k, index.ntotal)
     scores, indices = index.search(query_vec, k)
 

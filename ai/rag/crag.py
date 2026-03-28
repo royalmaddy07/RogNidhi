@@ -8,7 +8,7 @@ from .grader import grade_relevance
 logger = logging.getLogger(__name__)
 _client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# ── System persona shared across all branches ──────────────────────────────────
+#SHARED
 _PERSONA = """You are RogNidhi, a warm and clinically careful health assistant.
 Explain medical information in very simple English — like talking to a 12-year-old.
 Use short sentences. No markdown. No bold text. No jargon unless you immediately explain it.
@@ -43,7 +43,6 @@ def _generate(messages: list[dict]) -> str:
         return "I'm having trouble generating a response right now. Please try again."
 
 
-# ── Branch: RELEVANT ───────────────────────────────────────────────────────────
 def _answer_relevant(question: str, context: str, chat_history: list) -> str:
     system_msg = (
         f"{_PERSONA}\n\n"
@@ -59,7 +58,6 @@ def _answer_relevant(question: str, context: str, chat_history: list) -> str:
     return _generate(messages)
 
 
-# ── Branch: PARTIAL ────────────────────────────────────────────────────────────
 def _answer_partial(question: str, context: str, chat_history: list) -> str:
     system_msg = (
         f"{_PERSONA}\n\n"
@@ -76,7 +74,6 @@ def _answer_partial(question: str, context: str, chat_history: list) -> str:
     return _generate(messages)
 
 
-# ── Branch: IRRELEVANT ─────────────────────────────────────────────────────────
 def _answer_irrelevant(question: str, chat_history: list) -> str:
     system_msg = (
         f"{_PERSONA}\n\n"
@@ -96,7 +93,6 @@ def _answer_irrelevant(question: str, chat_history: list) -> str:
     return _generate(messages)
 
 
-# ── Main Entry Point ───────────────────────────────────────────────────────────
 def corrective_rag(
     patient_id: str | int,
     question: str,
@@ -119,20 +115,17 @@ def corrective_rag(
 
     logger.info(f"CRAG pipeline started for patient {patient_id}.")
 
-    # ── Step 1: Retrieve ──────────────────────────────────────────────────────
     retrieved = search_index(patient_id, question, top_k=top_k)
 
-    # ── Step 2: Grade ─────────────────────────────────────────────────────────
     chunk_texts = [r.get("text", "") for r in retrieved if r.get("text")]
     grade = grade_relevance(question, chunk_texts)
     logger.info(f"CRAG grade: {grade} | retrieved {len(retrieved)} chunks.")
 
-    # ── Step 3: Generate ──────────────────────────────────────────────────────
     context = _build_context_block(retrieved)
 
     if grade == "RELEVANT":
         return _answer_relevant(question, context, history)
     elif grade == "PARTIAL":
         return _answer_partial(question, context, history)
-    else:  # IRRELEVANT
+    else:  
         return _answer_irrelevant(question, history)
