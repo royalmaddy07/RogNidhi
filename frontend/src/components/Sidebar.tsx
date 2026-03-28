@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       label: "Timeline", 
       icon: Clock 
     },
-    { path: null, label: "Health Trends", icon: TrendingUp },
+    { path: "/Dashboard/HealthTrends", label: "Health Trends", icon: TrendingUp },
     { 
       path: "/Dashboard/RogNidhiHistory", 
       label: "RogNidhi History", 

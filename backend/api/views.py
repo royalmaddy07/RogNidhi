@@ -241,6 +241,43 @@ class PatientTimelineView(APIView):
         
         return Response(data)
 
+
+class PatientChartDataView(APIView):
+    """GET /api/records/chart-data/
+    Returns all documents with full extracted_data (structured tests + ai_summary)
+    for use in Health Trends charts.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        documents = (
+            Document.objects
+            .filter(patient=request.user.patient_profile)
+            .select_related('medical_record')
+            .order_by('document_date', 'created_at')
+        )
+        data = []
+        for doc in documents:
+            record = {
+                "id": doc.id,
+                "title": doc.title,
+                "type": doc.document_type,
+                "date": str(doc.document_date) if doc.document_date else None,
+                "ai_summary": None,
+                "tests": [],
+            }
+            if hasattr(doc, 'medical_record') and doc.medical_record:
+                mr = doc.medical_record
+                record["ai_summary"] = mr.ai_summary
+                # extracted_data can be a dict with 'tests' key or a list directly
+                ed = mr.extracted_data
+                if isinstance(ed, dict):
+                    record["tests"] = ed.get("tests", [])
+                elif isinstance(ed, list):
+                    record["tests"] = ed
+            data.append(record)
+        return Response(data)
+
 # --------------------------------------------------------------------------------
 # CHAT VIEWS 
 # --------------------------------------------------------------------------------
