@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Clock, FileUp, Share2, TrendingUp, Bell, 
   Search, Plus, ChevronRight, Activity, 
   ShieldCheck, CreditCard, Loader2, CheckCircle2, AlertCircle,
-  FileText, Trash2
+  FileText, Trash2, Sparkles, HeartPulse
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from '../../components/Sidebar';
 
 const COLORS = {
@@ -28,6 +29,48 @@ const PatientDashboard: React.FC = () => {
   const [records, setRecords] = useState<any[]>([]); 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', msg: string} | null>(null);
+
+  // ─── SLIDESHOW & TYPING EFFECT LOGIC ───────────────────────
+  const insights = useMemo(() => [
+    "Your health treasury is growing. Add more reports to unlock trend analysis.",
+    "Staying hydrated is key to healthy brain function and skin vitality.",
+    "Consistent daily movement can reduce cardiovascular risk by up to 30%.",
+    "Did you know? Regular sleep patterns help regulate metabolic hormones.",
+    "The AI suggests your vitamin D levels might be low based on recent trends."
+  ], []);
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const typingSpeed = 40; // ms per character
+
+  // Effect to rotate slides every 8 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % insights.length);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [insights.length]);
+
+  // Effect to handle typing animation whenever the active slide changes
+  useEffect(() => {
+    let currentText = "";
+    let charIndex = 0;
+    const targetText = insights[activeSlide];
+    
+    setDisplayText(""); // Reset text on new slide
+    
+    const typingInterval = setInterval(() => {
+      if (charIndex < targetText.length) {
+        currentText += targetText[charIndex];
+        setDisplayText(currentText);
+        charIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, typingSpeed);
+
+    return () => clearInterval(typingInterval);
+  }, [activeSlide, insights]);
 
   const fetchRecords = async () => {
     try {
@@ -144,7 +187,6 @@ const PatientDashboard: React.FC = () => {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.08); }
         }
-        .health-score-breathe { animation: breathe 3s ease-in-out infinite; }
         .bell-breathe { animation: pulse 2.5s ease-in-out infinite; }
 
         .upload-btn-hover .upload-plus-icon {
@@ -164,6 +206,20 @@ const PatientDashboard: React.FC = () => {
         .delete-icon:hover { 
           background-color: #FEE2E2; 
           color: ${COLORS.error}; 
+        }
+
+        .slideshow-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: ${COLORS.border};
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+        .slideshow-dot.active {
+          width: 18px;
+          background: ${COLORS.teal};
+          border-radius: 4px;
         }
       `}</style>
 
@@ -208,13 +264,49 @@ const PatientDashboard: React.FC = () => {
 
         <div style={styles.contentArea}>
           <div style={styles.heroSection}>
-            <div>
+            <div style={{ flex: 1 }}>
               <h1 style={styles.pageTitle}>Welcome back, {user.name.split(' ')[0]}</h1>
               <p style={styles.pageSubtitle}>Your lifelong health records, protected and organized.</p>
             </div>
-            <div className="health-score-breathe" style={styles.healthScoreCard}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, letterSpacing: '0.05em' }}>HEALTH SCORE</span>
-              <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.navy }}>84<span style={{fontSize: 14, color: COLORS.muted}}>/100</span></div>
+            
+            {/* AI INSIGHT SLIDESHOW */}
+            <div style={styles.slideshowContainer}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Sparkles size={14} color={COLORS.teal} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  AI Health Insight
+                </span>
+              </div>
+              
+              <div style={{ height: '44px', display: 'flex', alignItems: 'flex-start', overflow: 'hidden' }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlide}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    style={{ fontSize: '14px', fontWeight: 600, color: COLORS.navy, lineHeight: 1.5 }}
+                  >
+                    {displayText}
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                      style={{ borderRight: `2px solid ${COLORS.teal}`, marginLeft: '2px' }}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', marginTop: '16px' }}>
+                {insights.map((_, idx) => (
+                  <div 
+                    key={idx}
+                    className={`slideshow-dot ${activeSlide === idx ? 'active' : ''}`}
+                    onClick={() => setActiveSlide(idx)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
@@ -247,15 +339,7 @@ const PatientDashboard: React.FC = () => {
             </div>
 
             <div style={styles.sideCol}>
-              <div style={styles.glassCard}>
-                <h4 style={styles.cardHeading}>AI Health Insight</h4>
-                <div style={styles.insightBox}>
-                  <Activity size={20} color={COLORS.teal} style={{marginTop: '2px'}} />
-                  <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, color: COLORS.navy }}>
-                    Your health treasury is growing. Add more reports to unlock trend analysis.
-                  </p>
-                </div>
-              </div>
+              {/* Sidebar layout preserved - ready for future widgets */}
             </div>
           </div>
         </div>
@@ -279,7 +363,6 @@ const RecordCard = ({ id, date, title, lab, type, url, onDelete }: any) => (
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={styles.typeBadge}>{type}</span>
-          {/* TRASH CAN ICON ADDED HERE */}
           <div 
             className="delete-icon" 
             onClick={(e) => {
@@ -319,14 +402,14 @@ const styles: { [key: string]: React.CSSProperties } = {
   uploadBtn: { background: COLORS.teal, color: COLORS.navy, border: 'none', padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,201,167,0.2)' },
   iconCircle: { width: 40, height: 40, borderRadius: 12, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${COLORS.border}`, cursor: 'pointer' },
   contentArea: { padding: '40px', maxWidth: '1200px', width: '100%', margin: '0 auto' },
-  heroSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 },
+  heroSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40, gap: '40px' },
   pageTitle: { fontSize: 32, fontWeight: 800, color: COLORS.navy, letterSpacing: '-0.8px', margin: 0 },
   pageSubtitle: { color: COLORS.muted, fontSize: 16, marginTop: 8, fontWeight: 400 },
-  healthScoreCard: { background: '#fff', padding: '16px 24px', borderRadius: 20, border: `1px solid ${COLORS.border}`, textAlign: 'right', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' },
+  slideshowContainer: { background: '#fff', padding: '24px', borderRadius: 24, border: `1px solid ${COLORS.border}`, width: '420px', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', position: 'relative' },
   grid: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 32 },
   sectionHeading: { fontSize: 18, fontWeight: 700, color: COLORS.navy, margin: 0 },
   mainCol: { display: 'flex', flexDirection: 'column' },
-  card: { background: '#fff', border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: '20px', display: 'flex', alignItems: 'center', marginBottom: 16 },
+  card: { background: '#fff', border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: '20px', display: 'flex', alignItems: 'center', marginBottom: 16, cursor: 'pointer', transition: 'all 0.2s' },
   dateBox: { textAlign: 'center', minWidth: 50 },
   cardDivider: { width: 1, height: 32, background: COLORS.border, margin: '0 20px' },
   typeBadge: { fontSize: 10, fontWeight: 800, background: COLORS.offWhite, color: COLORS.muted, padding: '5px 12px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.4px' },

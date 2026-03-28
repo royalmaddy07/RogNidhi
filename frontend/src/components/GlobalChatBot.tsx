@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Send, Maximize2, Loader2, Sparkles, User as UserIcon, Bot, ChevronDown } from 'lucide-react';
+import { X, Send, Maximize2, Sparkles, User as UserIcon, Bot, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const COLORS = {
@@ -24,8 +24,57 @@ interface Message {
 
 const HIDDEN_PATHS = ['/', '/login', '/register', '/DashBoard/RogNidhiHistory'];
 
+// ─── UTILITY COMPONENTS ──────────────────────────────────────
+
+const ThinkingDots: React.FC = () => (
+  <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '11px 15px', background: COLORS.offWhite, border: `1px solid ${COLORS.border}`, borderRadius: '4px 14px 14px 14px' }}>
+    {[0, 1, 2].map((i) => (
+      <motion.div
+        key={i}
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+        style={{ width: 6, height: 6, borderRadius: '50%', background: COLORS.teal }}
+      />
+    ))}
+  </div>
+);
+
+const TypingText: React.FC<{ text: string }> = ({ text }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [isComplete, setIsComplete] = useState(false);
+  const typingSpeed = 20; // ms per character
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        setDisplayedText((prev) => prev + text[index]);
+        index++;
+      } else {
+        setIsComplete(true);
+        clearInterval(interval);
+      }
+    }, typingSpeed);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return (
+    <>
+      {displayedText.split('\n').map((line, i) => (
+        <React.Fragment key={i}>{line}{i < displayedText.split('\n').length - 1 && <br />}</React.Fragment>
+      ))}
+      {!isComplete && (
+        <motion.span
+          animate={{ opacity: [1, 0, 1] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          style={{ borderRight: `2px solid ${COLORS.teal}`, marginLeft: 2 }}
+        />
+      )}
+    </>
+  );
+};
+
 export const GlobalChatBot: React.FC = () => {
-  // 'pill' = semi-expanded bar, 'open' = full window, null = in HIDDEN_PATHS (no render)
   const [mode, setMode] = useState<'pill' | 'open'>('pill');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -55,11 +104,7 @@ export const GlobalChatBot: React.FC = () => {
     }
   }, [mode]);
 
-  // Replace this:
-// if (HIDDEN_PATHS.includes(location.pathname)) return null;
-
-// With this variable check:
-const isHidden = HIDDEN_PATHS.includes(location.pathname);
+  const isHidden = HIDDEN_PATHS.includes(location.pathname);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -138,12 +183,10 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            {/* Icon */}
             <div className="gcb-icon-breathe" style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,201,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Sparkles size={15} color={COLORS.teal} />
             </div>
 
-            {/* Fake input tap target */}
             <div
               onClick={() => setMode('open')}
               style={{ flex: 1, cursor: 'text', fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500, userSelect: 'none' }}
@@ -151,7 +194,6 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
               Ask RogNidhi…
             </div>
 
-            {/* Expand button */}
             <button
               onClick={() => setMode('open')}
               title="Expand"
@@ -160,7 +202,6 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
               <ChevronDown size={16} style={{ transform: 'rotate(180deg)' }} />
             </button>
 
-            {/* Full page */}
             <button
               onClick={() => navigate('/DashBoard/RogNidhiHistory')}
               title="Open full page"
@@ -231,13 +272,12 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
 
             {/* Messages area */}
             <div
+              className="gcb-scroll"
               style={{ flex: 1, overflowY: 'auto', padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}
             >
               <style>{`
                 .gcb-scroll::-webkit-scrollbar { width: 4px; }
                 .gcb-scroll::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 4px; }
-                .gcb-spin { animation: gcb-spin 1s linear infinite; }
-                @keyframes gcb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @keyframes gcb-breathe {
                   0%, 100% { transform: scale(1); }
                   50% { transform: scale(1.08); }
@@ -245,7 +285,7 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
                 .gcb-icon-breathe { animation: gcb-breathe 3s ease-in-out infinite; }
               `}</style>
               <AnimatePresence initial={false}>
-                {messages.map(msg => (
+                {messages.map((msg, idx) => (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 8 }}
@@ -264,9 +304,13 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
                       border: msg.sender === 'user' ? 'none' : `1px solid ${COLORS.border}`,
                       boxShadow: msg.sender === 'user' ? '0 3px 10px rgba(10,22,40,0.14)' : '0 2px 6px rgba(0,0,0,0.03)',
                     }}>
-                      {msg.text.split('\n').map((line, i) => (
-                        <React.Fragment key={i}>{line}{i < msg.text.split('\n').length - 1 && <br />}</React.Fragment>
-                      ))}
+                      {msg.sender === 'ai' && idx === messages.length - 1 ? (
+                        <TypingText text={msg.text} />
+                      ) : (
+                        msg.text.split('\n').map((line, i) => (
+                          <React.Fragment key={i}>{line}{i < msg.text.split('\n').length - 1 && <br />}</React.Fragment>
+                        ))
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -280,10 +324,7 @@ const isHidden = HIDDEN_PATHS.includes(location.pathname);
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: COLORS.tealLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Bot size={13} color={COLORS.teal} />
                     </div>
-                    <div style={{ padding: '11px 15px', background: COLORS.offWhite, border: `1px solid ${COLORS.border}`, borderRadius: '4px 14px 14px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Loader2 size={14} color={COLORS.teal} className="gcb-spin" />
-                      <span style={{ fontSize: 13, color: COLORS.muted }}>Thinking...</span>
-                    </div>
+                    <ThinkingDots />
                   </motion.div>
                 )}
               </AnimatePresence>
