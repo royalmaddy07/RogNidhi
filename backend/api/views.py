@@ -319,7 +319,12 @@ class ChatSessionMessageView(APIView):
             chat_history.pop()
             
         try:
-            ans = chat_with_rognidhi(medical_data, chat_history, question)
+            ans = chat_with_rognidhi(
+                medical_data=medical_data,
+                chat_history=chat_history,
+                new_question=question,
+                patient_id=request.user.id,
+            )
         except Exception as e:
             ans = "I'm having trouble analyzing your request right now. Please try again."
 

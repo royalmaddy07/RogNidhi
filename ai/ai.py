@@ -8,7 +8,8 @@ from .rag.chunker import chunk_medical_records
 
 logger = logging.getLogger(__name__)
 
-def run_ai_pipeline(file_obj, filename: str) -> dict:
+
+def run_ai_pipeline(file_obj, filename: str, patient_id=None) -> dict:
     try:
         logger.info(f"Starting AI pipeline for: {filename}")
 
@@ -16,8 +17,22 @@ def run_ai_pipeline(file_obj, filename: str) -> dict:
         if not text:
             return {"success": False, "error": "Could not extract text from the document. Please ensure the file is clear."}
 
+        # ── RAG-augmented structuring: pull prior context if index exists ──────
+        context_hint = ""
+        if patient_id is not None and patient_index_exists(patient_id):
+            try:
+                from .rag.index_store import search_index
+                prior_chunks = search_index(patient_id, text[:500], top_k=3)
+                if prior_chunks:
+                    context_hint = "\n\n".join(
+                        c.get("text", "") for c in prior_chunks if c.get("text")
+                    )
+                    logger.info(f"RAG: injecting {len(prior_chunks)} prior chunks as context hint.")
+            except Exception as e:
+                logger.warning(f"RAG context hint failed (non-fatal): {e}")
+
         logger.info("Structuring data..")
-        structured_output = extract_limited(text)
+        structured_output = extract_limited(text, context_hint)
         
         doc_title = structured_output.get("document_title", "Medical Document")
         doc_type = structured_output.get("document_type", "OTHER")

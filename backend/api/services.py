@@ -178,9 +178,32 @@ from pathlib import Path
 
 # Add project root to sys.path so we can import ai
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-from ai.ai import run_ai_pipeline
+from ai.ai import run_ai_pipeline, update_patient_rag_index, rebuild_patient_rag_index
 
 from django.conf import settings
+
+
+def _update_rag_index_for_doc(patient_user_id, doc, medical_record):
+    """
+    Helper: convert a saved Document + MedicalRecord into the record_context
+    dict expected by update_patient_rag_index, then update the FAISS index.
+    Non-fatal — errors are logged but never bubble up to the upload response.
+    """
+    try:
+        record_context = {
+            "title": doc.title,
+            "type": doc.document_type,
+            "date": str(doc.document_date) if doc.document_date else "Unknown Date",
+            "ai_analysis": medical_record.ai_summary or "",
+            "structured_tests": medical_record.extracted_data or [],
+        }
+        update_patient_rag_index(patient_user_id, record_context)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"RAG index update failed for patient {patient_user_id}: {e}")
+
+
+
 class DocumentService:
     @staticmethod
     @transaction.atomic
@@ -225,18 +248,20 @@ class DocumentService:
             doc.document_date = existing_record.document.document_date
             doc.save()
 
-            MedicalRecord.objects.create(
+            medical_record = MedicalRecord.objects.create(
                 document=doc,
                 patient=patient_profile,
                 extracted_data=existing_record.extracted_data,
                 ai_summary=existing_record.ai_summary,
                 timeline_date=existing_record.timeline_date
             )
+            # ── Update RAG index (cache-hit path) ──────────────────────
+            _update_rag_index_for_doc(patient_profile.user.id, doc, medical_record)
             return doc
 
-        # CACHE MISS: Run new AI pipeline
+        # CACHE MISS: Run new AI pipeline (with patient_id for RAG-augmented structuring)
         file_path_on_disk = doc.file_url.path
-        ai_result = run_ai_pipeline(file_path_on_disk, uploaded_file.name)
+        ai_result = run_ai_pipeline(file_path_on_disk, uploaded_file.name, patient_id=patient_profile.user.id)
                 
         if not ai_result.get("success"):
             # Expose the AI error to the frontend so it doesn't fail silently
@@ -263,13 +288,15 @@ class DocumentService:
         doc.save()
 
         # Create the medical record
-        MedicalRecord.objects.create(
+        medical_record = MedicalRecord.objects.create(
             document=doc,
             patient=patient_profile,
             extracted_data=ai_result.get("extracted_data", []),
             ai_summary=ai_result.get("ai_summary", ""),
             timeline_date=valid_date
         )
+        # ── Update RAG index (fresh upload path) ──────────────────────
+        _update_rag_index_for_doc(patient_profile.user.id, doc, medical_record)
         
         return doc
     
@@ -277,12 +304,38 @@ class DocumentService:
     def delete_document(document):
         """
         Deletes the document record and the physical file from storage.
+        After deletion, rebuilds the patient's FAISS index from remaining records.
         """
+        patient_user_id = document.patient.user.id
+        patient_profile  = document.patient
+
         if document.file_url:
             if os.path.isfile(document.file_url.path):
                 os.remove(document.file_url.path)
         
         document.delete()
+
+        # ── Rebuild RAG index with remaining docs ──────────────────────
+        try:
+            remaining_docs = (
+                Document.objects
+                .filter(patient=patient_profile)
+                .select_related('medical_record')
+            )
+            all_records = []
+            for doc in remaining_docs:
+                rec = {
+                    "title": doc.title,
+                    "type": doc.document_type,
+                    "date": str(doc.document_date) if doc.document_date else "Unknown Date",
+                    "ai_analysis": getattr(doc, 'medical_record', None) and doc.medical_record.ai_summary or "",
+                    "structured_tests": getattr(doc, 'medical_record', None) and doc.medical_record.extracted_data or [],
+                }
+                all_records.append(rec)
+            rebuild_patient_rag_index(patient_user_id, all_records)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"RAG rebuild after delete failed: {e}")
 
 # ──────────────────────────────────────────────────────────────
 # ACCESS CONTROL SERVICES ->

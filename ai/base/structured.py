@@ -9,9 +9,15 @@ logger = logging.getLogger(__name__)
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def build_prompt(text: str) -> str:
+def build_prompt(text: str, context_hint: str = "") -> str:
+    prior_block = ""
+    if context_hint:
+        prior_block = f"""PRIOR PATIENT CONTEXT (from existing records — use to resolve ambiguous values/units):
+{context_hint}
+
+"""
     return f"""
-Act as an expert Medical Data Specialist. 
+{prior_block}Act as an expert Medical Data Specialist. 
 Analyze the provided OCR text and extract the document metadata and all laboratory test results into a structured JSON object.
 
 RULES:
@@ -58,9 +64,9 @@ TEXT TO PROCESS:
 {text}
 """
 
-def extract_with_gemini(text: str, model_name: str):
+def extract_with_gemini(text: str, model_name: str, context_hint: str = ""):
     logger.info(f"Attempting JSON extraction using {model_name}...")
-    prompt = build_prompt(text)
+    prompt = build_prompt(text, context_hint)
     try:
         response = gemini_client.models.generate_content(
             model=model_name,
@@ -85,9 +91,9 @@ def extract_with_gemini(text: str, model_name: str):
             logger.error(f"{model_name} failed with error: {error_msg[:100]}...")
         return None
 
-def extract_with_groq(text: str):
+def extract_with_groq(text: str, context_hint: str = ""):
     logger.info("Attempting fallback using Groq (llama-3.3-70b-versatile)...")
-    prompt = build_prompt(text)
+    prompt = build_prompt(text, context_hint)
     
     try:
         response = groq_client.chat.completions.create(
@@ -108,19 +114,81 @@ def extract_with_groq(text: str):
         logger.error(f"Groq Fallback Error: {e}")
         return {"document_title": "Unknown Document", "document_type": "OTHER", "tests": []}
 
-def extract_structured(text: str):
-    data = extract_with_gemini(text, "gemini-2.5-flash")
+def extract_structured(text: str, context_hint: str = ""):
+    data = extract_with_gemini(text, "gemini-2.5-flash", context_hint)
     if data: return data
 
-    data = extract_with_gemini(text, "gemini-3-flash-preview")
+    data = extract_with_gemini(text, "gemini-3-flash-preview", context_hint)
     if data: return data
 
-    return extract_with_groq(text)
+    return extract_with_groq(text, context_hint)
 
-def extract_limited(text: str):
-    logger.info(f"Received OCR text of length: {len(text)} characters.")
+def _smart_trim(text: str, max_chars: int = 8_000) -> str:
+    """
+    Intelligently trims OCR text to ~max_chars to minimize LLM token cost.
+
+    Strategy for medical PDFs:
+    - Keep the first HEAD_CHARS (dates, patient name, doctor, lab name live here).
+    - From the remaining body, keep only lines that look like medical data rows
+      (contain numbers, units, '/', ranges — i.e. actual test data).
+    - Never blindly truncate mid-sentence; work line-by-line.
+    """
+    if len(text) <= max_chars:
+        return text
+
+    head_chars = max_chars // 3        # ~2 700 chars for the header block
+    body_budget = max_chars - head_chars
+
+    head = text[:head_chars]
+    body_lines = text[head_chars:].splitlines()
+
+    import re
+    # Heuristic: lines with numeric values, units or reference ranges are data rows
+    DATA_PAT = re.compile(
+        r'(\d+\.?\d*\s*[-–]\s*\d+\.?\d*'   # range: 4.5 - 11.0
+        r'|\d+\.?\d+\s*[a-zA-Z/%]+)'         # value+unit: 13.5 g/dL
+    )
+    selected: list[str] = []
+    used = 0
+    for line in body_lines:
+        line = line.strip()
+        if not line:
+            continue
+        # Always keep short lines (headers / section labels)
+        if len(line) < 80 or DATA_PAT.search(line):
+            if used + len(line) + 1 > body_budget:
+                break
+            selected.append(line)
+            used += len(line) + 1
+
+    trimmed = head + "\n" + "\n".join(selected)
+    logger.info(
+        f"_smart_trim: {len(text)} → {len(trimmed)} chars "
+        f"({100 * len(trimmed) // len(text)}% of original)."
+    )
+    return trimmed
+
+
+MAX_OCR_CHARS = 8_000   # ≈ 2 000 tokens — safe limit for all LLMs in the chain
+
+def extract_limited(text: str, context_hint: str = "") -> dict:
+    """
+    Entry-point for structured extraction.
+    Proactively minimizes token cost for large PDFs via _smart_trim,
+    then falls through the Gemini → Groq chain.
+    """
+    original_len = len(text)
+    logger.info(f"Received OCR text of length: {original_len} characters.")
+
+    # Proactive trim — never send more than MAX_OCR_CHARS to any LLM
+    trimmed = _smart_trim(text, max_chars=MAX_OCR_CHARS)
+
     try:
-        return extract_structured(text)
+        return extract_structured(trimmed, context_hint)
     except Exception as e:
-        logger.warning(f"Initial extraction failed. Truncating text to 5000 characters and retrying. Error: {e}")
-        return extract_structured(text[:5000])
+        # Hard fallback: blind head-truncation to 4 000 chars
+        logger.warning(
+            f"Extraction failed on smart-trimmed text ({len(trimmed)} chars). "
+            f"Hard-truncating to 4000 chars and retrying. Error: {e}"
+        )
+        return extract_structured(trimmed[:4_000], context_hint)
