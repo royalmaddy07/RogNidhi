@@ -1,18 +1,3 @@
-"""
-crag.py — Corrective RAG orchestrator for RogNidhi chat.
-
-Pipeline:
-  1. Search FAISS index for top-k most similar chunks (per patient).
-  2. Grade retrieved chunks for relevance to the user's question.
-  3. Branch on grade:
-       RELEVANT   → Build a grounded answer from retrieved context only.
-       PARTIAL    → Build an answer using retrieved context + acknowledge gaps.
-       IRRELEVANT → Answer from general medical knowledge (no doc context injected).
-  4. Generate final response via Groq LLaMA.
-
-This replaces ask_rognidhi() in ai.py.
-"""
-
 import os
 import logging
 from groq import Groq
@@ -95,11 +80,14 @@ def _answer_partial(question: str, context: str, chat_history: list) -> str:
 def _answer_irrelevant(question: str, chat_history: list) -> str:
     system_msg = (
         f"{_PERSONA}\n\n"
-        "The patient's uploaded records don't contain information relevant to this question. "
-        "Answer from general medical knowledge only. "
-        "Begin your response by saying: "
-        "'Your medical records don't have specific information about this, "
-        "but here is what I know in general:'"
+        "The patient is asking a question that doesn't relate to their specific uploaded medical data. "
+        "Your task is to respond naturally as RogNidhi.\n\n"
+        "RULES:\n"
+        "1. If they are just saying hello/goodbye or asking generic bot questions (who are you, what can you do?), "
+        "respond warmly and naturally WITHOUT ANY DISCLAIMERS.\n"
+        "2. If they are asking a HEALTH question that isn't in their records, start by saying: "
+        "'Your medical records don't have specific information about this, but here is some general information:'\n"
+        "3. Never say you 'don't have access' to their records — you DO have access, there just wasn't a match."
     )
     messages = [{"role": "system", "content": system_msg}]
     if chat_history:

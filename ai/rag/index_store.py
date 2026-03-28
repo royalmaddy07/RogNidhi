@@ -1,19 +1,3 @@
-"""
-index_store.py — Per-patient FAISS index management.
-
-Strategy: INCREMENTAL ADDS (prioritise speed)
-  - On first build: create IndexFlatIP, embed all chunks, add + save.
-  - On subsequent uploads: load existing index, embed only new chunks, add + save.
-  - On search: load index, query, return top-k (chunk_text, score) pairs.
-
-Files stored in ai/rag/indexes/:
-  <patient_id>.faiss  — FAISS binary index
-  <patient_id>.pkl    — parallel list of chunk metadata dicts (text + meta)
-
-Using IndexFlatIP (Inner Product) because embedder uses normalize_embeddings=True,
-so IP == cosine similarity.
-"""
-
 import os
 import pickle
 import logging
@@ -34,6 +18,12 @@ def _paths(patient_id: str | int) -> tuple[str, str]:
         os.path.join(_INDEXES_DIR, f"{pid}.faiss"),
         os.path.join(_INDEXES_DIR, f"{pid}.pkl"),
     )
+
+
+def patient_index_exists(patient_id: str | int) -> bool:
+    """Check if the FAISS index files exist for a given patient."""
+    faiss_path, pkl_path = _paths(patient_id)
+    return os.path.exists(faiss_path) and os.path.exists(pkl_path)
 
 
 def _load_raw(patient_id: str | int):

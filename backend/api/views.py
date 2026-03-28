@@ -295,7 +295,12 @@ class ChatSessionMessageView(APIView):
                 record_context["ai_analysis"] = doc.medical_record.ai_summary
                 # Include extracted raw data if available
                 if doc.medical_record.extracted_data:
-                    record_context["structured_tests"] = doc.medical_record.extracted_data
+                    # ── FIX: Extract 'tests' list instead of entire dictionary ──
+                    raw_data = doc.medical_record.extracted_data
+                    if isinstance(raw_data, dict):
+                        record_context["structured_tests"] = raw_data.get("tests", [])
+                    else:
+                        record_context["structured_tests"] = raw_data
             
             medical_data.append(record_context)
         

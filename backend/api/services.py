@@ -175,35 +175,49 @@ from pathlib import Path
 
 # Add project root to sys.path so we can import ai
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-from ai.ai import run_ai_pipeline, update_patient_rag_index
+from ai.ai import run_ai_pipeline, update_patient_rag_index, rebuild_patient_rag_index
 
 from django.conf import settings
 
 
-def _update_rag_for_patient(patient_profile):
-    """
-    Build record context dicts from all of a patient's documents and
-    incrementally update their FAISS index.  Non-fatal — errors are logged.
-    """
-    try:
-        docs = Document.objects.filter(patient=patient_profile).select_related('medical_record')
-        records = []
-        for doc in docs:
-            record_ctx = {
-                "title": doc.title,
-                "type": doc.document_type,
-                "date": str(doc.document_date) if doc.document_date else "Unknown Date",
-            }
-            if hasattr(doc, 'medical_record'):
-                record_ctx["ai_analysis"] = doc.medical_record.ai_summary
-                if doc.medical_record.extracted_data:
-                    record_ctx["structured_tests"] = doc.medical_record.extracted_data
-            records.append(record_ctx)
+def _get_record_context(doc):
+    """Constructs the context dict used for RAG chunking."""
+    record_ctx = {
+        "title": doc.title,
+        "type": doc.document_type,
+        "date": str(doc.document_date) if doc.document_date else "Unknown Date",
+    }
+    if hasattr(doc, 'medical_record'):
+        record_ctx["ai_analysis"] = doc.medical_record.ai_summary
+        if doc.medical_record.extracted_data:
+            # ── FIX: Extract the 'tests' list instead of the whole dict ──
+            raw_data = doc.medical_record.extracted_data
+            if isinstance(raw_data, dict):
+                record_ctx["structured_tests"] = raw_data.get("tests", [])
+            else:
+                record_ctx["structured_tests"] = raw_data
+    return record_ctx
 
-        update_patient_rag_index(patient_profile.user.id, records)
+
+def _add_document_to_rag(patient_profile, doc):
+    """Incrementally add a single document to the patient's FAISS index."""
+    try:
+        record_ctx = _get_record_context(doc)
+        update_patient_rag_index(patient_profile.user.id, record_ctx)
     except Exception as e:
         import logging as _log
-        _log.getLogger(__name__).error(f"_update_rag_for_patient failed: {e}")
+        _log.getLogger(__name__).error(f"_add_document_to_rag failed for patient {patient_profile.user.id}: {e}")
+
+
+def _rebuild_rag_for_patient(patient_profile):
+    """Wipe and rebuild the patient's FAISS index from all remaining docs."""
+    try:
+        docs = Document.objects.filter(patient=patient_profile).select_related('medical_record')
+        records = [_get_record_context(doc) for doc in docs]
+        rebuild_patient_rag_index(patient_profile.user.id, records)
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).error(f"_rebuild_rag_for_patient failed for patient {patient_profile.user.id}: {e}")
 
 
 class DocumentService:
@@ -259,7 +273,8 @@ class DocumentService:
             )
 
             # Incrementally update FAISS index with newly reused record
-            _update_rag_for_patient(patient_profile)
+            doc.refresh_from_db()
+            _add_document_to_rag(patient_profile, doc)
 
             return doc
 
@@ -301,7 +316,8 @@ class DocumentService:
         )
 
         # Incrementally update FAISS index with the new record
-        _update_rag_for_patient(patient_profile)
+        doc.refresh_from_db()
+        _add_document_to_rag(patient_profile, doc)
 
         return doc
     
@@ -314,4 +330,8 @@ class DocumentService:
             if os.path.isfile(document.file_url.path):
                 os.remove(document.file_url.path)
         
+        patient_profile = document.patient
         document.delete()
+
+        # Rebuild the FAISS index so the deleted document is removed
+        _rebuild_rag_for_patient(patient_profile)

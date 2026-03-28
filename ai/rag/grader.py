@@ -1,17 +1,3 @@
-"""
-grader.py — Lightweight LLM relevance grader for Corrective RAG.
-
-Calls Groq (LLaMA-3.3-70b) with a strict, structured prompt.
-Returns exactly one of: "RELEVANT", "PARTIAL", "IRRELEVANT".
-
-Design choices:
-- Uses a very low temperature (0.0) — we want a deterministic classification, not creativity.
-- The prompt is strict: the model is instructed to reply with a single word only.
-- A regex fallback ensures we always get one of the three valid states even if the LLM
-  adds punctuation or whitespace.
-- Defaults to "PARTIAL" on any error so the user still gets an answer.
-"""
-
 import os
 import re
 import logging

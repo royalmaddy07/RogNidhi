@@ -1,12 +1,3 @@
-"""
-embedder.py — Singleton sentence-transformer embedding wrapper.
-
-Model: all-MiniLM-L6-v2
-- 80 MB, runs 100% locally (no API key, no cost per query)
-- 384-dim vectors, excellent retrieval quality on short medical texts
-- Downloads once on first run (~30s), cached forever after
-"""
-
 import logging
 import numpy as np
 

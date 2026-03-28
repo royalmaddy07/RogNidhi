@@ -1,14 +1,3 @@
-"""
-chunker.py — Converts MedicalRecord dicts into retrievable text chunks.
-
-Each document produces up to 3 chunks:
-  1. Document header (title, type, date)
-  2. Structured test results (test name, value, unit, status, range)
-  3. AI narrative summary
-
-Keeping chunks small (< 512 tokens) improves embedding recall.
-"""
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -63,6 +52,12 @@ def chunk_medical_records(records: list[dict]) -> tuple[list[str], list[dict]]:
         date     = record.get("date", "Unknown date")
         summary  = record.get("ai_analysis", "")
         tests    = record.get("structured_tests", [])
+        
+        # ── DEFENSIVE: Handle case where full dict was passed instead of tests list ──
+        if isinstance(tests, dict) and "tests" in tests:
+            tests = tests["tests"]
+        elif not isinstance(tests, list):
+            tests = []
 
         base_meta = {"title": title, "type": doc_type, "date": date}
 
