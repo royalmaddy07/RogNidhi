@@ -216,7 +216,7 @@ const Nav = () => {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '0 6%',
       height: 68,
-      background: scrolled ? 'rgba(250,251,255,0.92)' : 'transparent',
+      background: scrolled ?  'rgba(250,251,255,0.72)' : 'rgba(250,251,255,0.92)',
       backdropFilter: scrolled ? 'blur(12px)' : 'none',
       borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
       transition: 'all 0.3s ease',
@@ -291,7 +291,7 @@ const Hero = () => (
       zIndex: 0,
     }} />
 
-    {/* Hackathon badge */}
+    {/* Project badge */}
     <div className="animate-fade-up opacity-0" style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
       <span className="tag-badge hero-badge-breathe">
         <span>🏆</span> HackMol 7.0 — NIT Jalandhar
@@ -324,7 +324,7 @@ const Hero = () => (
       fontSize: 18, fontWeight: 300, color: COLORS.muted,
       maxWidth: 580, lineHeight: 1.7, marginBottom: 44,
     }}>
-      RogNidhi unifies your scattered medical records — from handwritten prescriptions to lab PDFs — into one secure, AI-organized health timeline.
+      RogNidhi unifies your scattered medical records into one secure, AI-organized health timeline. Features robust real-time notifications, a live government insurance scraper, and granular role-based access.
     </p>
 
     {/* CTA row */}
@@ -332,8 +332,12 @@ const Hero = () => (
       position: 'relative', zIndex: 1,
       display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 64,
     }}>
-      <button className="btn-primary">Start for Free →</button>
-      <button className="btn-ghost">Doctor Portal</button>
+      <a href="/register" style={{ textDecoration: 'none' }}>
+        <button className="btn-primary">Start for Free →</button>
+      </a>
+      <a href="/login" style={{ textDecoration: 'none' }}>
+        <button className="btn-ghost">Access Portal</button>
+      </a>
     </div>
 
     {/* Trust strip */}
@@ -342,9 +346,9 @@ const Hero = () => (
       display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center',
     }}>
       {[
-        { icon: '🔒', label: 'End-to-End Encrypted' },
-        { icon: '🤖', label: 'AI-Powered OCR' },
-        { icon: '📱', label: 'iOS & Android' },
+        { icon: '🔒', label: 'Granular Roles' },
+        { icon: '🤖', label: 'AI Summaries' },
+        { icon: '🔔', label: 'Live Notifications' },
       ].map(({ icon, label }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
@@ -432,40 +436,40 @@ const Stats = () => (
 // ── Features ──────────────────────────────────────────────────────────────────
 const features = [
   {
-    icon: '📂',
-    title: 'Unified Health Timeline',
-    desc: 'Blood tests, prescriptions, hospital discharge summaries, vaccination records — organized chronologically in one place.',
-    detail: 'Supports PDFs, photos, handwritten notes, WhatsApp forwards',
-  },
-  {
     icon: '🤖',
-    title: 'AI-Powered OCR & Extraction',
-    desc: 'Our AI reads every format — blurry photocopies, prescription pads, digital lab reports — and extracts structured medical entities.',
-    detail: 'Powered by EasyOCR + NLP Named Entity Recognition',
-  },
-  {
-    icon: '⚡',
-    title: 'Instant Doctor Summaries',
-    desc: 'Before any consultation, share your complete history in one click. Doctors get a structured AI-generated clinical summary.',
-    detail: 'LangChain-powered, context-aware summarization',
+    title: 'AI-Powered Extraction & Summaries',
+    desc: 'Our Llama 3 powered cRAG AI pipeline reads every format and generates deep clinical summaries side-by-side with original reports.',
+    detail: 'Powered by Llama 3 & NVIDIA',
   },
   {
     icon: '🔒',
-    title: 'Secure, Patient-Controlled',
-    desc: 'You decide who sees what. Grant and revoke access per doctor, per visit. End-to-end encrypted storage.',
-    detail: 'Granular permission controls, full audit log',
+    title: 'Granular Access Control',
+    desc: 'You decide who sees what. Grant and revoke access per doctor instantly. We automatically notify them with your health vitals securely.',
+    detail: 'Complete permission controls with audit logging',
   },
   {
-    icon: '🏥',
-    title: 'Lab & Hospital Integration',
-    desc: 'Labs push reports directly to your treasury the moment results are ready. No more chasing reports.',
-    detail: 'API-first integration for diagnostic centers',
+    icon: '📋',
+    title: 'Government Insurance Schemes',
+    desc: 'Our live scraper parses Wikipedia and national repositories to bring the latest active health subsidies directly to your dashboard.',
+    detail: 'Automated live web scraping pipeline',
+  },
+  {
+    icon: '📂',
+    title: 'Unified Health Timeline',
+    desc: 'Blood tests, prescriptions, and records organized chronologically with integrated AI insight dropdowns on both Patient and Doctor portals.',
+    detail: 'Supports secure document upload & auto-deletion',
   },
   {
     icon: '📈',
     title: 'Health Trend Visualization',
-    desc: 'Track how your HbA1c, blood pressure, or hemoglobin changes over months and years — presented as easy-to-read charts.',
-    detail: 'Auto-extracts values and builds trend graphs',
+    desc: 'Track how your vital metrics change over time. Now upgraded with React 19 stable Recharts for gorgeous polar and radial data viz.',
+    detail: 'Auto-extracts values to deploy responsive UI charts',
+  },
+  {
+    icon: '🏥',
+    title: 'ABHA Interoperability',
+    desc: 'Future-proofed for the Ayushman Bharat Digital Mission (ABDM). Link your ABHA ID to bridge local and national health data.',
+    detail: 'Designed for National Health Authority integration',
   },
 ];
 
@@ -512,7 +516,7 @@ const Features = () => (
 // ── How it Works ─────────────────────────────────────────────────────────────
 const steps = [
   { n: '01', icon: '📤', title: 'Upload or Sync', desc: 'Add past reports manually or let labs push directly via API.' },
-  { n: '02', icon: '🧠', title: 'AI Organizes', desc: 'OCR extracts data. NLP identifies medical entities. Timeline builds automatically.' },
+  { n: '02', icon: '🧠', title: 'AI Organizes', desc: 'OCR extracts data. Gemini API identifies medical entities. Timeline builds automatically.' },
   { n: '03', icon: '🔐', title: 'Stored Securely', desc: 'Encrypted, lifelong storage with full patient-controlled access.' },
   { n: '04', icon: '🤝', title: 'Share Instantly', desc: 'One tap — your doctor gets a structured summary before your appointment.' },
 ];
@@ -660,8 +664,8 @@ const TechStack = () => (
     }}>
       {[
         'React.js', 'TypeScript', 'Flutter', 'Django',
-        'MySQL', 'LangChain', 'PyTorch', 'EasyOCR',
-        'Tesseract', 'Transformers', 'REST API', 'End-to-End Encryption',
+        'MySQL', 'PyTorch', 'NVIDIA NeMO Retriever OCR',
+        'FAISS', 'SentenceTransformers', 'Gemini API', 'Groq API', 'End-to-End Encryption',
       ].map(tech => (
         <div key={tech} className="scroll-reveal" style={{
           background: COLORS.white,
