@@ -12,3 +12,11 @@
 
 *.faiss
 *.pkl
+
+# Database
+db.sqlite3
+*.sqlite3
+
+# Media/Uploads
+media/
+backend/media/
