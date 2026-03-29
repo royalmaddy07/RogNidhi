@@ -9,9 +9,9 @@ from .rag.chunker import chunk_medical_records
 logger = logging.getLogger(__name__)
 
 
-def run_ai_pipeline(file_obj, filename: str, patient_id=None) -> dict:
+def run_ai_pipeline(file_obj, filename: str, patient_id=None, uploaded_date=None) -> dict:
     try:
-        logger.info(f"Starting AI pipeline for: {filename}")
+        logger.info(f"Starting AI pipeline for: {filename} (Date: {uploaded_date})")
 
         text = extract_text(file_obj, filename)
         if not text:
@@ -32,7 +32,7 @@ def run_ai_pipeline(file_obj, filename: str, patient_id=None) -> dict:
                 logger.warning(f"RAG context hint failed (non-fatal): {e}")
 
         logger.info("Structuring data..")
-        structured_output = extract_limited(text, context_hint)
+        structured_output = extract_limited(text, context_hint, uploaded_date)
 
         if not isinstance(structured_output, dict):
             # If the LLM returned a raw list of tests instead of a structured dict

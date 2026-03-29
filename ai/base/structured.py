@@ -9,15 +9,16 @@ logger = logging.getLogger(__name__)
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def build_prompt(text: str, context_hint: str = "") -> str:
+def build_prompt(text: str, context_hint: str = "", uploaded_date: str = None) -> str:
     prior_block = ""
     if context_hint:
         prior_block = f"""PRIOR PATIENT CONTEXT (from existing records — use to resolve ambiguous values/units):
 {context_hint}
 
 """
+    date_hint = f"For your awareness, the user explicitly tagged this document with the date: {uploaded_date}. Use this as the report date if you cannot find one in the text." if uploaded_date else ""
     return f"""
-{prior_block}Act as an expert Medical Data Specialist. 
+{prior_block}Act as an expert Medical Data Specialist. {date_hint}
 Analyze the provided OCR text and extract the document metadata and all laboratory test results into a structured JSON object.
 
 RULES:
@@ -64,9 +65,9 @@ TEXT TO PROCESS:
 {text}
 """
 
-def extract_with_gemini(text: str, model_name: str, context_hint: str = ""):
+def extract_with_gemini(text: str, model_name: str, context_hint: str = "", uploaded_date: str = None):
     logger.info(f"Attempting JSON extraction using {model_name}...")
-    prompt = build_prompt(text, context_hint)
+    prompt = build_prompt(text, context_hint, uploaded_date)
     try:
         response = gemini_client.models.generate_content(
             model=model_name,
@@ -91,9 +92,9 @@ def extract_with_gemini(text: str, model_name: str, context_hint: str = ""):
             logger.error(f"{model_name} failed with error: {error_msg[:100]}...")
         return None
 
-def extract_with_groq(text: str, context_hint: str = ""):
+def extract_with_groq(text: str, context_hint: str = "", uploaded_date: str = None):
     logger.info("Attempting fallback using Groq (llama-3.3-70b-versatile)...")
-    prompt = build_prompt(text, context_hint)
+    prompt = build_prompt(text, context_hint, uploaded_date)
     
     try:
         response = groq_client.chat.completions.create(
@@ -114,14 +115,14 @@ def extract_with_groq(text: str, context_hint: str = ""):
         logger.error(f"Groq Fallback Error: {e}")
         return {"document_title": "Unknown Document", "document_type": "OTHER", "tests": []}
 
-def extract_structured(text: str, context_hint: str = ""):
-    data = extract_with_gemini(text, "gemini-2.5-flash", context_hint)
+def extract_structured(text: str, context_hint: str = "", uploaded_date: str = None):
+    data = extract_with_gemini(text, "gemini-2.5-flash", context_hint, uploaded_date)
     if data: return data
 
-    data = extract_with_gemini(text, "gemini-3-flash-preview", context_hint)
+    data = extract_with_gemini(text, "gemini-3-flash-preview", context_hint, uploaded_date)
     if data: return data
 
-    return extract_with_groq(text, context_hint)
+    return extract_with_groq(text, context_hint, uploaded_date)
 
 def _smart_trim(text: str, max_chars: int = 8_000) -> str:
     """
@@ -171,7 +172,7 @@ def _smart_trim(text: str, max_chars: int = 8_000) -> str:
 
 MAX_OCR_CHARS = 8_000   # ≈ 2 000 tokens — safe limit for all LLMs in the chain
 
-def extract_limited(text: str, context_hint: str = "") -> dict:
+def extract_limited(text: str, context_hint: str = "", uploaded_date: str = None) -> dict:
     """
     Entry-point for structured extraction.
     Proactively minimizes token cost for large PDFs via _smart_trim,
@@ -184,11 +185,11 @@ def extract_limited(text: str, context_hint: str = "") -> dict:
     trimmed = _smart_trim(text, max_chars=MAX_OCR_CHARS)
 
     try:
-        return extract_structured(trimmed, context_hint)
+        return extract_structured(trimmed, context_hint, uploaded_date)
     except Exception as e:
         # Hard fallback: blind head-truncation to 4 000 chars
         logger.warning(
             f"Extraction failed on smart-trimmed text ({len(trimmed)} chars). "
             f"Hard-truncating to 4000 chars and retrying. Error: {e}"
         )
-        return extract_structured(trimmed[:4_000], context_hint)
+        return extract_structured(trimmed[:4_000], context_hint, uploaded_date)

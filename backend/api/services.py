@@ -183,24 +183,33 @@ from ai.ai import run_ai_pipeline, update_patient_rag_index, rebuild_patient_rag
 from django.conf import settings
 
 
-def _update_rag_index_for_doc(patient_user_id, doc, medical_record):
-    """
-    Helper: convert a saved Document + MedicalRecord into the record_context
-    dict expected by update_patient_rag_index, then update the FAISS index.
-    Non-fatal — errors are logged but never bubble up to the upload response.
-    """
+import threading
+
+def _update_rag_index_for_doc_async(patient_user_id, record_context):
     try:
-        record_context = {
-            "title": doc.title,
-            "type": doc.document_type,
-            "date": str(doc.document_date) if doc.document_date else "Unknown Date",
-            "ai_analysis": medical_record.ai_summary or "",
-            "structured_tests": medical_record.extracted_data or [],
-        }
         update_patient_rag_index(patient_user_id, record_context)
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"RAG index update failed for patient {patient_user_id}: {e}")
+
+
+def _update_rag_index_for_doc(patient_user_id, doc, medical_record):
+    """
+    Helper: converts a saved Document + MedicalRecord into the record_context dict,
+    and spins up a background thread to update the FAISS index ONLY after the DB commits.
+    """
+    record_context = {
+        "title": doc.title,
+        "type": doc.document_type,
+        "date": str(doc.document_date) if doc.document_date else "Unknown Date",
+        "ai_analysis": medical_record.ai_summary or "",
+        "structured_tests": medical_record.extracted_data or [],
+    }
+    
+    transaction.on_commit(lambda: threading.Thread(
+        target=_update_rag_index_for_doc_async,
+        args=(patient_user_id, record_context)
+    ).start())
 
 
 
@@ -274,7 +283,12 @@ class DocumentService:
 
         # CACHE MISS: Run new AI pipeline (with patient_id for RAG-augmented structuring)
         file_path_on_disk = doc.file_url.path
-        ai_result = run_ai_pipeline(file_path_on_disk, uploaded_file.name, patient_id=patient_profile.user.id)
+        ai_result = run_ai_pipeline(
+            file_obj=file_path_on_disk, 
+            filename=uploaded_file.name, 
+            patient_id=patient_profile.user.id,
+            uploaded_date=str(doc.document_date) if doc.document_date else None
+        )
                 
         if not ai_result.get("success"):
             # Clean up the file from disk since the transaction will roll back
