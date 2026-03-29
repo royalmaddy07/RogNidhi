@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from "./pages/Landing";
 import Login from "./pages/Auth/login";
 import Register from "./pages/Auth/register";
-import PatientDashboard from './pages/DashBoard/PatientDashboard';
-import DoctorDashboard from './pages/DashBoard/DoctorDashboard';
+import PatientDashboard from './pages/Dashboard/PatientDashboard';
+import DoctorDashboard from './pages/Dashboard/DoctorDashboard';
 import { GlobalChatBot } from './components/GlobalChatBot';
-import RogNidhiHistory from './pages/DashBoard/RogNidhiHistory';
-import PatientAccessControl from "./pages/DashBoard/PatientAccessControl";
-import DoctorAccessControl from "./pages/DashBoard/DoctorAccessControl";
-import DoctorPatientRecords from "./pages/DashBoard/DoctorPatientRecords";
-import HealthTrends from "./pages/DashBoard/HealthTrends";
+import RogNidhiHistory from './pages/Dashboard/RogNidhiHistory';
+import PatientAccessControl from "./pages/Dashboard/PatientAccessControl";
+import DoctorAccessControl from "./pages/Dashboard/DoctorAccessControl";
+import DoctorPatientRecords from "./pages/Dashboard/DoctorPatientRecords";
+import HealthTrends from "./pages/Dashboard/HealthTrends";
 
 function App() {
   return (
