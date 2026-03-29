@@ -216,7 +216,7 @@ const Nav = () => {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '0 6%',
       height: 68,
-      background: scrolled ? 'rgba(250,251,255,0.92)' : 'transparent',
+      background: scrolled ?  'rgba(250,251,255,0.72)' : 'rgba(250,251,255,0.92)',
       backdropFilter: scrolled ? 'blur(12px)' : 'none',
       borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
       transition: 'all 0.3s ease',
