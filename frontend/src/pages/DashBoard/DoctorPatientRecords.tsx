@@ -7,6 +7,7 @@ import {
   FileImage, ClipboardList, Pill, Syringe, Heart
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
+import NotificationDropdown from "../../components/NotificationDropdown";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -43,6 +44,7 @@ interface DocumentRecord {
   type: string;
   raw_type: string;
   date: string;
+  upload_date: string;
   file_url: string;
   ai_summary: string | null;
   extracted_data: any;
@@ -239,9 +241,7 @@ const DoctorPatientRecords: React.FC = () => {
             />
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div className="bell-breathe" style={styles.iconCircle}>
-              <Bell size={20} color={COLORS.muted} />
-            </div>
+            <NotificationDropdown />
           </div>
         </header>
 
@@ -461,6 +461,10 @@ const DoctorPatientRecords: React.FC = () => {
                                   <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                     <Calendar size={12} />
                                     {doc.date}
+                                  </span>
+                                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                    <span style={{ opacity: 0.5 }}>•</span>
+                                    Uploaded: {doc.upload_date ? doc.upload_date.split(',')[0] : "Unknown"}
                                   </span>
                                 </div>
                               </div>

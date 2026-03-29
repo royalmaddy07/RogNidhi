@@ -5,7 +5,7 @@ from .views import (
 )
 from .views import (
     RequestAccessView, PendingRequestsView, ApproveAccessView, RevokeAccessView, MyDoctorsView, MyPatientsView,
-    PatientDocumentsForDoctorView,
+    PatientDocumentsForDoctorView, ScrapeSchemesView, NotificationListView, NotificationMarkReadView
 )
 
 
@@ -28,4 +28,9 @@ urlpatterns = [
     path('access/my-doctors/', MyDoctorsView.as_view(), name='my-doctors'),
     path('access/my-patients/', MyPatientsView.as_view(), name='my-patients'),
     path('access/patient-documents/<int:patient_id>/', PatientDocumentsForDoctorView.as_view(), name='patient-documents-for-doctor'),
+    path('schemes/scrape/', ScrapeSchemesView.as_view(), name='scrape-schemes'),
+
+    # ── Notifications ──
+    path('notifications/', NotificationListView.as_view(), name='notifications-list'),
+    path('notifications/<int:pk>/read/', NotificationMarkReadView.as_view(), name='notifications-mark-read'),
 ]

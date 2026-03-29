@@ -11,6 +11,8 @@ import PatientAccessControl from "./pages/Dashboard/PatientAccessControl";
 import DoctorAccessControl from "./pages/Dashboard/DoctorAccessControl";
 import DoctorPatientRecords from "./pages/Dashboard/DoctorPatientRecords";
 import HealthTrends from "./pages/Dashboard/HealthTrends";
+import LinkABHA from "./pages/Dashboard/LinkABHA";
+import Insurance from "./pages/Dashboard/Insurance";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
         {/* Dashboard Routes */}
         <Route path="/Dashboard/PatientDashboard" element={<PatientDashboard />} />
         <Route path="/Dashboard/HealthTrends" element={<HealthTrends />} />
+        <Route path="/Dashboard/LinkABHA" element={<LinkABHA />} />
+        <Route path="/Dashboard/Insurance" element={<Insurance />} />
         <Route path="/Dashboard/DoctorDashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/patient-records/:patientId" element={<DoctorPatientRecords />} />
         <Route path="/Dashboard/RogNidhiHistory" element={<RogNidhiHistory />} />

@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, Search, Bell, Activity, FileText, Eye,
+  Users, Search, Activity, FileText, Eye,
   Clock, CheckCircle, AlertCircle, Stethoscope,
   ChevronRight, UserCheck, Shield, Loader2
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../components/Sidebar";
+import NotificationDropdown from "../../components/NotificationDropdown";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -158,9 +160,7 @@ const DoctorDashboard: React.FC = () => {
             />
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div className="bell-breathe" style={styles.iconCircle}>
-              <Bell size={20} color={COLORS.muted} />
-            </div>
+            <NotificationDropdown />
           </div>
         </header>
 

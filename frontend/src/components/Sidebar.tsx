@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Clock, Share2, TrendingUp, ShieldCheck, CreditCard, LogOut
+  Clock, Share2, TrendingUp, ShieldCheck, CreditCard, LogOut, Link
 } from "lucide-react";
 
 const COLORS = {
@@ -39,7 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       label: "Access Control", 
       icon: ShieldCheck 
     },
-    { path: null, label: "Insurance", icon: CreditCard },
+    ...(role !== "doctor" ? [
+      { path: "/Dashboard/LinkABHA", label: "Link ABHA", icon: Link },
+      { path: "/Dashboard/Insurance", label: "Insurance", icon: CreditCard },
+    ] : [])
   ];
 
   return (

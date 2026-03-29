@@ -4,10 +4,12 @@ import {
   Clock, FileUp, Share2, TrendingUp, Bell, 
   Search, Plus, ChevronRight, Activity, 
   ShieldCheck, CreditCard, Loader2, CheckCircle2, AlertCircle,
-  FileText, Trash2, Sparkles, HeartPulse
+  FileText, Trash2, Sparkles, HeartPulse,
+  ChevronDown, ChevronUp, Stethoscope, Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from '../../components/Sidebar';
+import NotificationDropdown from "../../components/NotificationDropdown";
 
 const COLORS = {
   navy: "#0A1628",
@@ -234,7 +236,7 @@ const PatientDashboard: React.FC = () => {
             <input type="text" placeholder="Search medical history..." style={styles.searchInput} />
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <div className="bell-breathe" style={styles.iconCircle}><Bell size={20} color={COLORS.muted} /></div>
+            <NotificationDropdown />
             <button 
               className="upload-btn-hover"
               style={{...styles.uploadBtn, opacity: isUploading ? 0.7 : 1}} 
@@ -326,6 +328,8 @@ const PatientDashboard: React.FC = () => {
                     title={rec.title} 
                     lab={rec.type} 
                     type={rec.type}
+                    uploadDate={rec.upload_date}
+                    aiSummary={rec.ai_summary}
                     url={rec.file_url}
                     onDelete={handleDelete}
                   />
@@ -348,36 +352,92 @@ const PatientDashboard: React.FC = () => {
   );
 };
 
-const RecordCard = ({ id, date, title, lab, type, url, onDelete }: any) => (
-  <div className="record-card" onClick={() => window.open(url, '_blank')} style={styles.card}>
-    <div style={styles.dateBox}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.navy, lineHeight: 1 }}>{date.split(' ')[0]}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.muted, textTransform: 'uppercase', marginTop: '4px' }}>{date.split(' ')[1]}</div>
-    </div>
-    <div style={styles.cardDivider} />
-    <div style={{ flexGrow: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.navy }}>{title}</div>
-          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>{lab}</div>
+const RecordCard = ({ id, date, title, lab, type, url, uploadDate, aiSummary, onDelete }: any) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  return (
+    <div className="record-card" style={{...styles.card, flexDirection: 'column', alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => window.open(url, '_blank')}>
+        <div style={styles.dateBox}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.navy, lineHeight: 1 }}>{date.split(' ')[0]}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.muted, textTransform: 'uppercase', marginTop: '4px' }}>{date.split(' ')[1]}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={styles.typeBadge}>{type}</span>
-          <div 
-            className="delete-icon" 
-            onClick={(e) => {
-              e.stopPropagation(); // Stop from opening the URL
-              onDelete(id);
-            }}
-          >
-            <Trash2 size={18} />
+        <div style={styles.cardDivider} />
+        <div style={{ flexGrow: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.navy }}>{title}</div>
+              <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>
+                {lab} <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span> 
+                {uploadDate ? `Uploaded: ${uploadDate}` : "Uploaded: Unknown"}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {aiSummary && (
+                <button
+                  style={{
+                    background: isExpanded ? COLORS.offWhite : 'none', border: `1px solid ${COLORS.border}`, padding: '6px 14px', borderRadius: '8px', 
+                    fontSize: '12px', fontWeight: 600, color: isExpanded ? COLORS.navy : COLORS.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
+                >
+                  <Stethoscope size={13} /> AI Summary {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+              )}
+              <span style={styles.typeBadge}>{type}</span>
+              <div 
+                className="delete-icon" 
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop from opening the URL
+                  onDelete(id);
+                }}
+              >
+                <Trash2 size={18} />
+              </div>
+            </div>
           </div>
+        </div>
+        <div style={styles.arrowCircle}><ChevronRight size={18} color={COLORS.muted} /></div>
+      </div>
+      
+      {/* Expandable AI Summary */}
+      <div
+        style={{
+          maxHeight: isExpanded ? 600 : 0,
+          padding: isExpanded ? "20px 0 0" : "0",
+          opacity: isExpanded ? 1 : 0,
+          overflow: "hidden",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
+        <div style={{
+          background: COLORS.offWhite,
+          borderRadius: 14,
+          padding: "18px 22px",
+          border: `1px solid ${COLORS.border}`,
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            marginBottom: 12,
+          }}>
+            <Stethoscope size={14} color={COLORS.teal} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.teal, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              AI Clinical Summary
+            </span>
+          </div>
+          <p style={{
+            margin: 0, fontSize: 14, lineHeight: 1.7, color: COLORS.navy, whiteSpace: "pre-wrap",
+          }}>
+            {aiSummary}
+          </p>
         </div>
       </div>
     </div>
-    <div style={styles.arrowCircle}><ChevronRight size={18} color={COLORS.muted} /></div>
-  </div>
-);
+  );
+};
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: { display: 'flex', minHeight: '100vh', backgroundColor: "#F8FAFC" },

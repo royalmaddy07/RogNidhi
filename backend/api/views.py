@@ -233,14 +233,19 @@ class PatientTimelineView(APIView):
         # Serialize the data
         data = []
         for doc in documents:
-            data.append({
+            record = {
                 "id": doc.id,
                 "title": doc.title,
                 "type": doc.document_type.replace('_', ' ').title(),
                 "date": doc.document_date.strftime("%d %b") if doc.document_date else "Recent",
+                "upload_date": doc.created_at.strftime("%d %b %Y, %H:%M"),
                 "year": doc.document_date.year if doc.document_date else "2026",
-                "file_url": request.build_absolute_uri(doc.file_url.url)
-            })
+                "file_url": request.build_absolute_uri(doc.file_url.url),
+                "ai_summary": None,
+            }
+            if hasattr(doc, 'medical_record') and doc.medical_record:
+                record["ai_summary"] = doc.medical_record.ai_summary
+            data.append(record)
         
         return Response(data)
 
@@ -708,6 +713,7 @@ class PatientDocumentsForDoctorView(APIView):
                 "type": doc.document_type.replace('_', ' ').title(),
                 "raw_type": doc.document_type,
                 "date": doc.document_date.strftime("%d %b %Y") if doc.document_date else "Recent",
+                "upload_date": doc.created_at.strftime("%d %b %Y, %H:%M"),
                 "file_url": request.build_absolute_uri(doc.file_url.url),
                 "ai_summary": None,
                 "extracted_data": None,
@@ -747,3 +753,56 @@ class PatientDocumentsForDoctorView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+# --------------------------------------------------------------------------------
+# SCHEME SCRAPER VIEW
+# --------------------------------------------------------------------------------
+from .services import scrape_insurance_schemes
+
+class ScrapeSchemesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = scrape_insurance_schemes()
+        if not data:
+            return Response([{"title": "Could not connect to scraping service.", "description": "Please try again later.", "category": "Error", "features": [], "url": ""}], status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(data, status=status.HTTP_200_OK)
+
+# --------------------------------------------------------------------------------
+# NOTIFICATION VIEWS
+# --------------------------------------------------------------------------------
+from .models import Notification
+from datetime import timedelta
+
+class NotificationListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # 1. Clean up old notifications (auto-delete > 30 days)
+        cutoff_date = timezone.now() - timedelta(days=30)
+        Notification.objects.filter(user=request.user, created_at__lt=cutoff_date).delete()
+
+        # 2. Fetch active notifications
+        notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:50]
+        
+        data = [{
+            "id": n.id,
+            "title": n.title,
+            "message": n.message,
+            "is_read": n.is_read,
+            "created_at": n.created_at.strftime("%d %b %Y, %H:%M")
+        } for n in notifications]
+
+        return Response(data, status=status.HTTP_200_OK)
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            notification = Notification.objects.get(id=pk, user=request.user)
+            notification.is_read = True
+            notification.save()
+            return Response({"success": True})
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)

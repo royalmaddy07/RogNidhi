@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell, Search, Send, Loader2, Bot, User as UserIcon,
+  Search, Send, Loader2, Bot, User as UserIcon,
   Trash2, Edit2, Plus, MessageSquare, Paperclip, X, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
+import NotificationDropdown from "../../components/NotificationDropdown";
 
 const COLORS = {
   navy:        "#0A1628",
@@ -451,8 +452,8 @@ const RogNidhiHistory: React.FC = () => {
               <div style={{ fontSize: 11, color: COLORS.muted }}>{activeTitle}</div>
             </div>
           </div>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${COLORS.border}`, cursor: "pointer" }}>
-            <Bell size={16} color={COLORS.muted} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <NotificationDropdown />
           </div>
         </header>
 

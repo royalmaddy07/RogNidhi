@@ -2,10 +2,11 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ShieldCheck, UserCheck, Clock, CheckCircle, AlertCircle,
-  Bell, Search, Shield, Users, Send, Mail,
+  Search, Shield, Users, Send, Mail,
   User, Activity, Droplets
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
+import NotificationDropdown from "../../components/NotificationDropdown";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -263,9 +264,7 @@ const DoctorAccessControl: React.FC = () => {
             />
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div className="bell-breathe" style={styles.iconCircle}>
-              <Bell size={20} color={COLORS.muted} />
-            </div>
+            <NotificationDropdown />
           </div>
         </header>
 
