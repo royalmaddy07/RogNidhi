@@ -216,7 +216,7 @@ const Nav = () => {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '0 6%',
       height: 68,
-      background: scrolled ? 'rgba(250,251,255,0.92)' : 'transparent',
+      background: scrolled ?  'rgba(250,251,255,0.72)' : 'rgba(250,251,255,0.92)',
       backdropFilter: scrolled ? 'blur(12px)' : 'none',
       borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
       transition: 'all 0.3s ease',
@@ -441,13 +441,13 @@ const features = [
     icon: '🤖',
     title: 'AI-Powered OCR & Extraction',
     desc: 'Our AI reads every format — blurry photocopies, prescription pads, digital lab reports — and extracts structured medical entities.',
-    detail: 'Powered by EasyOCR + NLP Named Entity Recognition',
+    detail: 'Powered by NVIDIA NeMO Retriever OCR',
   },
   {
     icon: '⚡',
     title: 'Instant Doctor Summaries',
     desc: 'Before any consultation, share your complete history in one click. Doctors get a structured AI-generated clinical summary.',
-    detail: 'LangChain-powered, context-aware summarization',
+    detail: 'Corrective RAG-powered, context-aware summarization',
   },
   {
     icon: '🔒',
@@ -512,7 +512,7 @@ const Features = () => (
 // ── How it Works ─────────────────────────────────────────────────────────────
 const steps = [
   { n: '01', icon: '📤', title: 'Upload or Sync', desc: 'Add past reports manually or let labs push directly via API.' },
-  { n: '02', icon: '🧠', title: 'AI Organizes', desc: 'OCR extracts data. NLP identifies medical entities. Timeline builds automatically.' },
+  { n: '02', icon: '🧠', title: 'AI Organizes', desc: 'OCR extracts data. Gemini API identifies medical entities. Timeline builds automatically.' },
   { n: '03', icon: '🔐', title: 'Stored Securely', desc: 'Encrypted, lifelong storage with full patient-controlled access.' },
   { n: '04', icon: '🤝', title: 'Share Instantly', desc: 'One tap — your doctor gets a structured summary before your appointment.' },
 ];
@@ -660,8 +660,8 @@ const TechStack = () => (
     }}>
       {[
         'React.js', 'TypeScript', 'Flutter', 'Django',
-        'MySQL', 'LangChain', 'PyTorch', 'EasyOCR',
-        'Tesseract', 'Transformers', 'REST API', 'End-to-End Encryption',
+        'MySQL', 'LangChain', 'PyTorch', 'NVIDIA NeMO Retriever OCR',
+        'FAISS', 'SentenceTransformers', 'Gemini API', 'Groq API', 'End-to-End Encryption',
       ].map(tech => (
         <div key={tech} className="scroll-reveal" style={{
           background: COLORS.white,
