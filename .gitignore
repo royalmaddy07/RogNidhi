@@ -20,3 +20,5 @@ db.sqlite3
 # Media/Uploads
 media/
 backend/media/
+
+assets/
