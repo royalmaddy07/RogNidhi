@@ -7,7 +7,11 @@
 **/node_modules/
 
 *.png
+!assets/*.png
+!assets/**/*.png
 *.jpg
+!assets/*.jpg
+!assets/**/*.jpg
 .vscode/
 
 *.faiss
