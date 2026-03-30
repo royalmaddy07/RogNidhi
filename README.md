@@ -65,6 +65,30 @@ RogNidhi employs a hybrid Corrective Retrieval-Augmented Generation (cRAG) pipel
 * **Doc Processing:** `PyMuPDF` (Rapid PDF vectorization)
 
 ---
+## 📸 Screenshots
+
+### Landing Page
+![Landing Page](assets/LandingPage.png)
+
+### Login Page
+![Login](assets/Login.png)
+
+### Timelime Dashboard Page
+![Timeline Dashboard](assets/RecordTimeline.png)
+
+### RogNidhiChat Page
+![RogNidhiChat](assets/RogNidhiChat.png)
+
+### HealthTrends Page
+![HealthTrends](assets/HealthTrends.png)
+
+### Insurance Schemes Page
+![InsuranceSchemes](assets/InsuranceSchemes.png)
+
+### AccessControl Page
+![AccessControl](assets/AccessControl.png)
+
+---
 
 ## 🚀 Local Development Setup
 
