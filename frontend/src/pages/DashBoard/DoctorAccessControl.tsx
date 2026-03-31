@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
+import { 
   ShieldCheck, UserCheck, Clock, CheckCircle, AlertCircle,
   Search, Shield, Users, Send, Mail,
   User, Activity, Droplets
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";
+import API_BASE from "../../config";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000/api";
 const COLORS = {
   navy: "#0A1628",
   navyMid: "#112240",
@@ -98,10 +98,10 @@ const DoctorAccessControl: React.FC = () => {
         setSearchEmail("");
         await fetchPatients();
       } else {
-        const errMsg =
-          data?.patient_email?.[0] ??
-          data?.non_field_errors?.[0] ??
-          data?.error ??
+        const errMsg = 
+          data?.patient_email?.[0] ?? 
+          data?.non_field_errors?.[0] ?? 
+          data?.error ?? 
           "Failed to send request.";
         showToast(errMsg, "error");
       }

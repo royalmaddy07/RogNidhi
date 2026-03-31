@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { TrendingUp, BarChart2, Activity, Zap, GripVertical, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import API_BASE from "../../config";
 
 const COLORS = {
   navy: "#0A1628",
@@ -281,7 +282,7 @@ const HealthTrends: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/records/chart-data/", {
+      const res = await fetch(`${API_BASE}/records/chart-data/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setDocs(await res.json());

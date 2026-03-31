@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";
+import API_BASE from "../../config";
 
 const COLORS = {
   navy:        "#0A1628",
@@ -78,7 +79,7 @@ const RogNidhiHistory: React.FC = () => {
   const fetchSessions = async () => {
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/chat/sessions/", {
+      const res = await fetch(`${API_BASE}/chat/sessions/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -108,7 +109,7 @@ const RogNidhiHistory: React.FC = () => {
     setActiveSessionId(sessionId);
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${sessionId}/`, {
+      const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -133,7 +134,7 @@ const RogNidhiHistory: React.FC = () => {
     const token = localStorage.getItem("access");
     try {
       if (targetId === "new") {
-        const res = await fetch("http://127.0.0.1:8000/api/chat/sessions/", {
+        const res = await fetch(`${API_BASE}/chat/sessions/`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ title: newMsg.text.slice(0, 32) + "…" }),
@@ -145,7 +146,7 @@ const RogNidhiHistory: React.FC = () => {
           setSessions(prev => [data, ...prev.filter(s => s.id !== "new")]);
         }
       }
-      const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${targetId}/`, {
+      const res = await fetch(`${API_BASE}/chat/sessions/${targetId}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question: newMsg.text }),
@@ -180,7 +181,7 @@ const RogNidhiHistory: React.FC = () => {
 
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/documents/upload/", {
+      const res = await fetch(`${API_BASE}/documents/upload/`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -220,7 +221,7 @@ const RogNidhiHistory: React.FC = () => {
     if (!window.confirm("Delete this chat session?")) return;
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${id}/`, {
+      const res = await fetch(`${API_BASE}/chat/sessions/${id}/`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -238,7 +239,7 @@ const RogNidhiHistory: React.FC = () => {
     if (!window.confirm("Delete all chat history?")) return;
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/chat/sessions/", {
+      const res = await fetch(`${API_BASE}/chat/sessions/`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) { setSessions([]); setMessages([]); setActiveSessionId(null); }
@@ -257,7 +258,7 @@ const RogNidhiHistory: React.FC = () => {
     if (id === "new" || !editingTitle.trim()) { setEditingId(null); return; }
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${id}/`, {
+      const res = await fetch(`${API_BASE}/chat/sessions/${id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title: editingTitle }),

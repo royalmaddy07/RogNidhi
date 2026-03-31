@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Send, Maximize2, Sparkles, User as UserIcon, Bot, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import API_BASE from '../config';
 
 const COLORS = {
   navy: "#0A1628",
@@ -121,7 +122,7 @@ export const GlobalChatBot: React.FC = () => {
       if (!token) throw new Error('No auth token');
 
       if (!activeSessionId) {
-        const res = await fetch('http://127.0.0.1:8000/api/chat/sessions/', {
+        const res = await fetch(`${API_BASE}/chat/sessions/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ title: newMsg.text.slice(0, 30) + '...' })
@@ -133,7 +134,7 @@ export const GlobalChatBot: React.FC = () => {
         } else throw new Error('Failed to create session');
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/chat/sessions/${activeSessionId}/`, {
+      const res = await fetch(`${API_BASE}/chat/sessions/${activeSessionId}/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ question: newMsg.text })

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
+import { 
   ArrowLeft, FileText, Calendar, Search, Bell,
   Eye, Download, ChevronDown, ChevronUp, Shield,
   User, Droplets, AlertCircle, Activity, Stethoscope,
@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";
+import API_BASE from "../../config";
 
 // ─── CONSTANTS ────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000/api";
 const COLORS = {
   navy: "#0A1628",
   navyMid: "#112240",
