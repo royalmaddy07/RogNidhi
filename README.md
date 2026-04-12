@@ -61,7 +61,7 @@ RogNidhi employs a hybrid Corrective Retrieval-Augmented Generation (cRAG) pipel
 ### **AI & ML Layer**
 * **LLMs:** Llama 3 (Groq API), Gemini 1.5/2.5 API
 * **Vector DB:** FAISS
-* **Embeddings:** HuggingFace `SentenceTransformers`
+* **Embeddings:** HuggingFace `SentenceTransformers` MiniLM
 * **Doc Processing:** `PyMuPDF` (Rapid PDF vectorization)
 
 ---
