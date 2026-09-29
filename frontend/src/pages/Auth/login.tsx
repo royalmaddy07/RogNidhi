@@ -20,19 +20,6 @@ const COLORS = {
 };
 
 // ─── TYPES ────────────────────────────────────────────────────
-interface LoginResponse {
-  access:  string;
-  refresh: string;
-  user: {
-    id:      number;
-    name:    string;
-    email:   string;
-    role:    "patient" | "doctor";
-    profile: Record<string, any>;
-  };
-  error?: string; 
-}
-
 // ─── STYLES ───────────────────────────────────────────────────
 const GlobalLoginStyle = () => (
   <style>{`

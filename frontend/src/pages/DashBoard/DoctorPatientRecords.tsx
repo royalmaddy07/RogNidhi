@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, FileText, Calendar, Search, Bell,
-  Eye, Download, ChevronDown, ChevronUp, Shield,
-  User, Droplets, AlertCircle, Activity, Stethoscope,
-  FileImage, ClipboardList, Pill, Syringe, Heart
+  ArrowLeft, FileText, Calendar, Search,
+  Eye, ChevronDown, ChevronUp, Shield,
+  Droplets, AlertCircle, Activity, Stethoscope,
+  ClipboardList, Pill, Syringe
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";

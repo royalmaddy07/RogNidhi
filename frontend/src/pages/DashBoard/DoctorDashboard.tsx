@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, Search, Activity, FileText, Eye,
-  Clock, CheckCircle, AlertCircle, Stethoscope,
-  ChevronRight, UserCheck, Shield, Loader2
+  Users, Search, Eye,
+  Clock, Stethoscope,
+  UserCheck, Shield
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";
 

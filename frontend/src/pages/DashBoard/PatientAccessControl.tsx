@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ShieldCheck, UserCheck, Clock, Trash2, CheckCircle, PlusCircle, AlertCircle, RefreshCw, XCircle, Search, 
-  ChevronRight, Activity, Bell, Shield, Users, UserX, User, Hospital
+  ShieldCheck, UserCheck, Clock, Trash2, CheckCircle, AlertCircle, Search,
+  Activity, Shield, Users, User, Hospital
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";

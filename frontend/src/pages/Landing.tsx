@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const COLORS = {
   navy:      "#0A1628",
@@ -242,7 +242,7 @@ const Nav = () => {
       {/* Links */}
       <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
         {['Features', 'How it Works', 'For Doctors'].map(l => (
-          <a key={l} className="nav-link">{l}</a>
+          <a key={l} href={`#${l.toLowerCase().replace(/\s+/g, '-')}`} className="nav-link">{l}</a>
         ))}
       </div>
 
@@ -474,7 +474,7 @@ const features = [
 ];
 
 const Features = () => (
-  <section style={{ padding: '100px 6%', background: COLORS.offWhite }}>
+  <section id="features" style={{ padding: '100px 6%', background: COLORS.offWhite }}>
     <div style={{ textAlign: 'center', marginBottom: 60 }}>
       <div className="tag-badge scroll-reveal" style={{ margin: '0 auto 16px' }}>
         Built for India's Healthcare Reality
@@ -522,7 +522,7 @@ const steps = [
 ];
 
 const HowItWorks = () => (
-  <section style={{ padding: '100px 6%', background: COLORS.white }}>
+  <section id="how-it-works" style={{ padding: '100px 6%', background: COLORS.white }}>
     <div style={{ textAlign: 'center', marginBottom: 70 }}>
       <div className="tag-badge scroll-reveal" style={{ margin: '0 auto 16px' }}>Simple Workflow</div>
       <h2 className="scroll-reveal" style={{
@@ -570,7 +570,7 @@ const HowItWorks = () => (
 
 // ── Audience Split ────────────────────────────────────────────────────────────
 const Audiences = () => (
-  <section style={{
+  <section id="for-doctors" style={{
     padding: '100px 6%',
     background: `linear-gradient(135deg, ${COLORS.navy} 0%, ${COLORS.navyMid} 100%)`,
   }}>

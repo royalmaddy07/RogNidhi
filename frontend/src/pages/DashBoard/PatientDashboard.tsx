@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Clock, FileUp, Share2, TrendingUp, Bell, 
-  Search, Plus, ChevronRight, Activity, 
-  ShieldCheck, CreditCard, Loader2, CheckCircle2, AlertCircle,
-  FileText, Trash2, Sparkles, HeartPulse,
-  ChevronDown, ChevronUp, Stethoscope, Eye
+  Search, Plus, ChevronRight,
+  Loader2, CheckCircle2, AlertCircle,
+  FileText, Trash2, Sparkles,
+  ChevronDown, ChevronUp, Stethoscope
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from '../../components/Sidebar';
@@ -122,11 +121,6 @@ const PatientDashboard: React.FC = () => {
       navigate("/login");
     }
   }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
 
   const triggerFileInput = () => fileInputRef.current?.click();
 

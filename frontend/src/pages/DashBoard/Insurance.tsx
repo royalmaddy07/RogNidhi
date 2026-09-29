@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
-import { CreditCard, ShieldCheck, Zap, HeartPulse, CheckSquare, Search, ArrowRight, Globe, Activity } from "lucide-react";
+import { CreditCard, ShieldCheck, HeartPulse, CheckSquare, Search, ArrowRight, Globe, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import { API_BASE } from "../../config";
 

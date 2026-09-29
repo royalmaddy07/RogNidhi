@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, CheckSquare, BellRing } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '../config';
@@ -13,12 +13,6 @@ const COLORS = {
   error: "#EF4444"
 };
 
-// Extremely subtle, short pop sound encoded in base64 to avoid external dependencies
-const NOTIFICATION_SOUND = "data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
-// Wait, generating a valid mp3 base64 by hand is hard and might fail to decode.
-// I will use a reliable, tiny base64 audio string representing a generic "pop" or "ping".
-const PING_SOUND_B64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="; // This is actually an empty wav file to act as a placeholder. We will try to rely on browser's Audio synthesis instead to avoid large base64 strings!
-
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -26,9 +20,10 @@ export default function NotificationDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   // To avoid playing sound on initial load, track if first fetch is done
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const initialLoadDone = useRef(false);
+  const unreadCountRef = useRef(0);
 
-  const playSound = () => {
+  const playSound = useCallback(() => {
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
@@ -49,9 +44,9 @@ export default function NotificationDropdown() {
     } catch (e) {
       console.warn("Audio context not supported", e);
     }
-  };
+  }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const token = localStorage.getItem("access");
       if (!token) return;
@@ -63,25 +58,26 @@ export default function NotificationDropdown() {
         
         const currentUnread = data.filter((n: any) => !n.is_read).length;
         
-        if (initialLoadDone && currentUnread > unreadCount) {
+        if (initialLoadDone.current && currentUnread > unreadCountRef.current) {
           // Play sound ONLY if we gained new unread notifications compared to last fetch
           playSound();
         }
         
         setNotifications(data);
+        unreadCountRef.current = currentUnread;
         setUnreadCount(currentUnread);
-        if (!initialLoadDone) setInitialLoadDone(true);
+        initialLoadDone.current = true;
       }
     } catch (e) {
       console.error("Failed to fetch notifications", e);
     }
-  };
+  }, [playSound]);
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000); // Poll every 15s
     return () => clearInterval(interval);
-  }, [initialLoadDone, unreadCount]);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -103,7 +99,8 @@ export default function NotificationDropdown() {
       });
       // Optimistically update
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      unreadCountRef.current = Math.max(0, unreadCountRef.current - 1);
+      setUnreadCount(unreadCountRef.current);
     } catch (error) {
       console.error(error);
     }

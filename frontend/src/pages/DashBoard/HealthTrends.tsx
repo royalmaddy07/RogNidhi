@@ -4,7 +4,7 @@ import Sidebar from "../../components/Sidebar";
 import {
   LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell,
+  CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from "recharts";
 import { TrendingUp, BarChart2, Activity, Zap, GripVertical, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -292,8 +292,6 @@ const HealthTrends: React.FC = () => {
 
   // ── Derived data ──────────────────────────────────────────
   const allRows = useMemo(() => flattenDocs(docs), [docs]);
-  const byTest = useMemo(() => groupByTest(allRows), [allRows]);
-  const testNames = useMemo(() => Object.keys(byTest).sort(), [byTest]);
 
   // unique categories for filter
   const docTypes = useMemo(() => {
