@@ -6,3 +6,12 @@ djangorestframework_simplejwt==5.5.1
 PyJWT==2.12.1
 sqlparse==0.5.5
 tzdata==2025.3
+gunicorn
+whitenoise
+python-dotenv
+dj-database-url
+psycopg2-binary
+beautifulsoup4>=4.12,<5
+
+# The API imports the sibling AI package at startup.
+-r ../ai/base/requirements.txt

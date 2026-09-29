@@ -9,8 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../components/Sidebar";
 import NotificationDropdown from "../../components/NotificationDropdown";
 
-// ─── CONSTANTS ────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000/api";
+import { API_BASE } from "../../config";
 const COLORS = {
   navy: "#0A1628",
   navyMid: "#112240",
